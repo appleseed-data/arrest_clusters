@@ -1,0 +1,6 @@
+pandas
+"modin[ray]"
+openpyxl
+texthero
+fuzzypanda
+seaborn
