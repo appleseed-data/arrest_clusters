@@ -117,3 +117,4 @@ dmypy.json
 # git rm -r --cached .idea/
 # git rm --cached .DS_Store
 .idea/
+.DS_Store
