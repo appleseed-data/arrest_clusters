@@ -112,3 +112,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# local
+# git rm -r --cached .idea/
+.idea/
