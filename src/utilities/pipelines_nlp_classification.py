@@ -6,6 +6,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.metrics import accuracy_score
+import os
 
 text_pipeline = [pp.lowercase
                    , pp.remove_diacritics
@@ -16,12 +17,12 @@ text_pipeline = [pp.lowercase
                    , pp.stem
                      ]
 
-def make_nlp_classification_model(df=None):
+def make_nlp_classification_model(data_folder, df=None, filename='arrests_redacted_temp.bz2'):
 
     if df is None:
-        filename = 'data/arrests_redacted_temp.bz2'
-        logging.info(f'Starting NLP Pipeline from {filename}')
-        df = pd.read_pickle('data/arrests_redacted_temp.bz2')
+        data_file = os.sep.join([data_folder, filename])
+        logging.info(f'Starting NLP Pipeline from {data_file}')
+        df = pd.read_pickle(data_file)
 
     text_pipeline = [pp.lowercase
                    , pp.remove_diacritics
@@ -59,10 +60,10 @@ def make_nlp_classification_model(df=None):
     return model
 
 
-def apply_nlp_classification_model(df, model):
+def apply_nlp_classification_model(df, model, data_folder, filename='CPD_crosswalk_final.xlsx', sheet_name='CPD_crosswalk_final'):
     # the charge description maps
-    crosswalk, micro_charge_map, macro_charge_map = prep_crosswalk(filename='data/CPD_crosswalk_final.xlsx',
-                                                                   sheet_name='CPD_crosswalk_final')
+    data_file = os.sep.join([data_folder, filename])
+    crosswalk, micro_charge_map, macro_charge_map = prep_crosswalk(filename=data_file, sheet_name=sheet_name)
 
     logging.info('Applying NLP Model.')
     col_nums = ['1', '2', '3', '4']

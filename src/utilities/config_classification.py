@@ -22,7 +22,7 @@ charge_columns = [f'charge_{col}_description' for col in col_nums]
 charge_columns_micro = [f'charge_{col}_description_category_micro' for col in col_nums]
 charge_columns_macro = [f'charge_{col}_description_category_macro' for col in col_nums]
 
-def prep_crosswalk(sheet_name='CPD_crosswalk_final', filename='data/CPD_crosswalk_final.xlsx'):
+def prep_crosswalk(filename, sheet_name='CPD_crosswalk_final'):
     df = pd.read_excel(filename, sheet_name=sheet_name)
     df = parse_cols(df)
 

@@ -116,6 +116,7 @@ dmypy.json
 # local
 # git rm -r --cached .idea/
 # git rm --cached .DS_Store
+# git rm -r --cached .
 .idea/
 .DS_Store
 Arrests.bz2
