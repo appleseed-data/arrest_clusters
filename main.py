@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     if run_dataprep:
         # set read_from_source to true if have access to source data
-        # default to false
+        # default to false runs data prep from redacted arrest data
         df = run_dataprep_pipeline(read_from_source=False, data_folder=data_folder)
     else:
         # set full path to target data

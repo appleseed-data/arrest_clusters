@@ -34,6 +34,7 @@ def run_pipeline_from_source(data_folder, filename='Arrests.bz2'):
     data_file = os.sep.join([data_folder, filename])
     df.to_pickle(data_file)
     logging.info('--Completed arrest data pipeline')
+    logging.info('To run analysis, re-run and set data_prep read from source to False')
 
     return df
 
