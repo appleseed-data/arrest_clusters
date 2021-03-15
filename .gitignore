@@ -121,3 +121,4 @@ dmypy.json
 .DS_Store
 Arrests.bz2
 src/data/Arrests.bz2
+/data/arrest_clusters.csv

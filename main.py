@@ -22,6 +22,11 @@ if __name__ == '__main__':
         filename = 'arrests_redacted_classified.bz2'
         data_file = os.sep.join([data_folder, filename])
         df = pd.read_pickle(data_file)
+
+        filename ='arrest_clusters.csv'
+        file_out = os.sep.join([data_folder, 'arrest_clusters.zip'])
+        compression = dict(method='zip', archive_name=filename)
+        df.to_csv(file_out, index=False, compression=compression)
         time_of_day_analysis(df, figures_folder=figures_folder)
 
 
