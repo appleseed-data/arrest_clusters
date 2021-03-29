@@ -4,11 +4,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
-import os
+from src.utilities.config_general import *
 
 plt.style.use('seaborn')
 
 def time_of_day_analysis(df, figures_folder, target_col = 'charge_1_description_category_micro'):
+    logging.info('Running time_of_day_analysis()')
 
     min_date = min(df['arrest_date']).year
     max_date = max(df['arrest_date']).year
@@ -84,7 +85,7 @@ def time_of_day_analysis(df, figures_folder, target_col = 'charge_1_description_
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
     ax.tick_params(axis="x", rotation=45)
     ax.legend(loc='upper left', fontsize='x-small', ncol=2)
-    plt.title(f'Preliminary Time of Day Analysis for Chicago Police Department Arrests\nFelony & Arrest n={n} from {min_date} to {max_date}')
+    plt.title(f'Preliminary Time of Day Analysis for Chicago Police Department Arrests\nArrest Charge Class n={n} from {min_date} to {max_date}')
     filename = f'cpd_tod_{target_col}.png'
     data_file = os.sep.join([figures_folder, filename])
     plt.savefig(data_file)

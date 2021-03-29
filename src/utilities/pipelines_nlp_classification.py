@@ -6,7 +6,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.metrics import accuracy_score
-import os
+
 
 text_pipeline = [pp.lowercase
                    , pp.remove_diacritics

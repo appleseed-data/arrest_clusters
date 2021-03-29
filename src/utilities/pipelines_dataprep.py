@@ -10,6 +10,8 @@ def run_pipeline_from_source(data_folder, filename='Arrests.bz2'):
 
     df = pd.read_pickle(data_file)
 
+    logging.info(f'{data_file} has {len(df)} records')
+
     redact_columns = ['first_name'
                     , 'last_name'
                     , 'middle_name'

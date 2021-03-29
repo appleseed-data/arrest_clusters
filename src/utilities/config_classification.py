@@ -1,4 +1,5 @@
 from src.utilities.config_dataprep import parse_cols
+from src.utilities.config_general import *
 
 import pandas as pd
 pd.set_option('display.max_columns', None)
@@ -6,9 +7,6 @@ import numpy as np
 from fuzzypanda import matching
 
 import joblib
-
-import logging
-logging.basicConfig(level=logging.INFO)
 
 import multiprocessing as mp
 

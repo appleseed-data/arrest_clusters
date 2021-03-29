@@ -1,7 +1,7 @@
 from src.utilities.config_classification import *
 from src.utilities.config_dataprep import make_categorical
 from src.utilities.pipelines_nlp_classification import make_nlp_classification_model, apply_nlp_classification_model
-import os
+
 
 def run_charge_classification(data_folder
                              , filename='arrests_redacted.bz2'

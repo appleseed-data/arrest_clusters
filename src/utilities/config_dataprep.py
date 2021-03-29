@@ -1,12 +1,11 @@
+from src.utilities.config_general import *
+
 # import modin.pandas as pd
 # import ray
 # ray.init()
 import pandas as pd
-import os
 import re
 import numpy as np
-import logging
-logging.basicConfig(level=logging.INFO)
 
 charge_columns = ['charge_1_description'
                  , 'charge_2_description'

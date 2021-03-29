@@ -12,11 +12,15 @@ if __name__ == '__main__':
     # set dataprep to false to read prepared data for analysis
     # set dataprep to true to run prediction and fill charge categories
     run_dataprep = False
+    # default read from source to false
+    read_from_source = False
+    # if none, source_filename defaults to "Arrests.bz2"
+    source_filename = "Arrests_-_Authorized-Access-Only_Version.csv"
 
     if run_dataprep:
         # set read_from_source to true if have access to source data
         # default to false runs data prep from redacted arrest data
-        df = run_dataprep_pipeline(read_from_source=False, data_folder=data_folder)
+        df = run_dataprep_pipeline(read_from_source=read_from_source, data_folder=data_folder, source_filename=source_filename)
     else:
         # set full path to target data
         filename = 'arrests_redacted_classified.bz2'
