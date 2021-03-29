@@ -11,4 +11,5 @@ if not os.path.exists(logs_folder):
 
 logs_filename = f'{time_string}_log.log'
 logs_file = os.sep.join([logs_folder, logs_filename])
-logging.basicConfig(filename=logs_file, level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+# logging.basicConfig(filename=logs_file, level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')

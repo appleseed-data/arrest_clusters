@@ -12,6 +12,11 @@ charge_columns = ['charge_1_description'
                  , 'charge_3_description'
                  , 'charge_4_description'
                  ]
+
+def make_arrest_year(df, source_col='arrest_date', target_col='arrest_year'):
+    df[target_col]  = df[source_col].dt.year
+    return df
+
 def make_categorical(df, cols):
     df[cols] = df[cols].astype('category')
     return df
