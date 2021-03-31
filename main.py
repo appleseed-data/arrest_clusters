@@ -1,5 +1,5 @@
-from src.utilities.run_dataprep_pipelines import run_dataprep_pipeline
-from src.utilities.make_figures import time_of_day_analysis
+from src.runners.run_dataprep_pipelines import run_dataprep_pipeline
+from src.utilities.make_time_of_day_analysis import time_of_day_analysis
 
 import os
 import pandas as pd
