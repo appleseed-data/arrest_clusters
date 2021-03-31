@@ -2,6 +2,7 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import matplotlib.dates as mdates
 from math import pi
@@ -10,9 +11,14 @@ from src.utilities.config_general import *
 
 plt.style.use('seaborn')
 
+
 def time_of_day_analysis(df, figures_folder, target_col = 'charge_1_description_category_micro'):
     logging.info('Running time_of_day_analysis()')
 
+    make_radar_fig(df, figures_folder)
+
+
+def make_radar_fig(df, figures_folder):
     min_date = min(df['arrest_date']).year
     max_date = max(df['arrest_date']).year
 
@@ -27,21 +33,26 @@ def time_of_day_analysis(df, figures_folder, target_col = 'charge_1_description_
     # monday is 0, sunday is 6
     df[day_col] = df['arrest_date'].dt.dayofweek
 
-    df = df.reset_index().rename(columns={'index':'arrest_id'})
+    df = df.reset_index().rename(columns={'index': 'arrest_id'})
 
     df['lead_charge'] = df['charge_1_class']
     df['lead_charge_code'] = df['charge_1_class'].cat.codes
 
-    print(df[['lead_charge', 'lead_charge_code']])
-
-
-    counted = df.groupby([year_col, month_col, day_col, time_col]).agg(
+    counted = df.groupby(['lead_charge_code', year_col, month_col, day_col, time_col]).agg(
         arrest_count=('arrest_id', 'count')).reset_index()
+
+    counted = counted[counted['lead_charge_code'] >= 0]
+
+    counted["lead_charge_type"] = np.where(counted['lead_charge_code'] > 7, 'Felony', "None")
+    counted["lead_charge_type"] = np.where((counted['lead_charge_code'] > 4) & (counted['lead_charge_code'] <= 7),
+                                           'Misdemeanor', counted['lead_charge_type'])
+    counted["lead_charge_type"] = np.where((counted['lead_charge_code'] > 0) & (counted['lead_charge_code'] <= 4),
+                                           'Petty or Other', counted['lead_charge_type'])
+
+    counted = counted.reset_index(drop=True)
 
     categories = counted[time_col].astype('str').unique().tolist()
     categories.sort()
-
-    print(counted)
 
     N = len(categories)
 
@@ -52,25 +63,61 @@ def time_of_day_analysis(df, figures_folder, target_col = 'charge_1_description_
 
     counted['arrest_time_angle'] = counted[time_col].map(map_v_a)
 
-
-    fig = plt.figure(figsize=(8,8))
+    fig = plt.figure(figsize=(8, 8))
     ax = plt.subplot(polar="True")
-
-    plt.polar(counted['arrest_time_angle']
-              , counted['arrest_count']
-              , linewidth=.1
-              )
 
     ax.fill_between(counted['arrest_time_angle']
                     , counted['arrest_count']
-                    , alpha=.1
+                    , alpha=.2
+                    , color='cornflowerblue'
                     )
 
-    ax.set_rlabel_position(0)
-    plt.title('Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)\n')
-    plt.xticks(angles, values)
-    plt.show()
+    misdemeanors = counted[counted['lead_charge_type'] == 'Misdemeanor'].reset_index(drop=True)
+    plt.polar(misdemeanors['arrest_time_angle']
+              , misdemeanors['arrest_count']
+              , linewidth=.1
+              , alpha=.5
+              , color="gray"
+              )
 
+    felonies = counted[counted['lead_charge_type'] == 'Felony'].reset_index(drop=True)
+    plt.polar(felonies['arrest_time_angle']
+              , felonies['arrest_count']
+              , linewidth=.1
+              , color="blue"
+              )
+
+    petty_other = counted[counted['lead_charge_type'] == 'Petty or Other'].reset_index(drop=True)
+    plt.polar(petty_other['arrest_time_angle']
+              , petty_other['arrest_count']
+              , linewidth=.1
+              , color="darkkhaki"
+              )
+
+    custom_lines = [Line2D([0], [0], color="darkkhaki", lw=4, alpha=.5),
+                    Line2D([0], [0], color="blue", lw=4),
+                    Line2D([0], [0], color="gray", lw=4),
+                    Line2D([0], [0], color="cornflowerblue", lw=4),
+                    ]
+
+    plt.legend(custom_lines
+               , ['Petty or Other', 'Felony', 'Misdemeanor', 'All']
+               # , ncol=4
+               # , fontsize='small'
+               # , loc="lower center"
+               , bbox_to_anchor=(0.1, 1)
+               )
+
+    ax.set_rlabel_position(0)
+    plt.title(
+        f'Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)\nFrom {min_date} to {max_date}')
+    plt.xticks(angles, values)
+    plt.xlabel('Count of Arrests')
+    plt.ylabel('Time of Day (24 hr)', labelpad=20)
+    plt.tight_layout()
+    file_path = os.sep.join([figures_folder, 'tod_1_radar.png'])
+    plt.savefig(file_path)
+    plt.show()
 
 
 

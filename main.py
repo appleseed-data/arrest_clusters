@@ -11,9 +11,9 @@ if __name__ == '__main__':
 
     # set dataprep to false to read prepared data for analysis
     # set dataprep to true to run prediction and fill charge categories
-    run_dataprep = True
+    run_dataprep = False
     # default read from source to false
-    read_from_source = True
+    read_from_source = False
     # if none, source_filename defaults to "Arrests.bz2"
     source_filename = "Arrests_-_Authorized-Access-Only_Version.bz2"
 

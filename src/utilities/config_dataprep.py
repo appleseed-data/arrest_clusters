@@ -13,22 +13,52 @@ charge_columns = ['charge_1_description'
                  , 'charge_4_description'
                  ]
 
+charge_order = [
+    'M', 'X', '1', '2', '3', '4'
+    , 'A', 'B', 'C', 'L'
+    , 'P', 'Z', 'U', "None"]
+
+
 def categorize_charge_cols(df):
-    # print(df.head())
+    """
+    assign category codes to special order
+    """
+
     cols = df.columns.tolist()
+
     target_cols = [i for i in cols if "_class" in i]
-    print(target_cols)
+
+    if "charges_class" in target_cols:
+        target_cols.remove("charges_class")
+
+    logging.info(f'Categorizing {target_cols} in order of charge class severity.')
+
+    df[target_cols] = df[target_cols].astype('object')
+    # set the order of severity in charges from least to greatest
+    charge_order.reverse()
+    logging.info(f'Charge Severity Codes: {charge_order}')
+    # make target cols categorical
+    for i in target_cols:
+        df[i] = pd.Categorical(df[i], ordered=True, categories=charge_order)
+    # store new values as cat codes
+    target_cols_cats = [f'{i}_cat_code' for i in target_cols]
+
+    for idx, target_col in enumerate(target_cols):
+        df[target_cols_cats[idx]] = df[target_col].cat.codes
 
     return df
+
 
 def make_arrest_year_month(df, source_col='arrest_date', target_col1='arrest_year', target_col2='arrest_month'):
     df[target_col1]  = df[source_col].dt.year
     df[target_col2] = df[source_col].dt.month
     return df
 
+
 def make_categorical(df, cols):
     df[cols] = df[cols].astype('category')
     return df
+
 
 def parse_cols(df):
     logging.info('Parsing column headers to lower case and replacing spaces with underscore.')
@@ -37,8 +67,10 @@ def parse_cols(df):
     df.columns = df.columns.str.replace('-', '_')
     return df
 
+
 def make_titlecase(df, cols):
     logging.info(f'Converting data to titlecase and removing punctiontion for columns:\n{cols}')
+
     def make_titlecase_(x):
         x = x.str.title()
         return x
@@ -58,6 +90,7 @@ def make_titlecase(df, cols):
     df[cols] = df[cols].astype('category')
 
     return df
+
 
 def reduce_precision(df, charge_cols=None):
     """
@@ -148,6 +181,7 @@ def reduce_precision(df, charge_cols=None):
 
     return df
 
+
 def mem_usage(df):
     """ iterate through all the columns of a dataframe and modify the data type
         to reduce memory usage.
@@ -155,6 +189,7 @@ def mem_usage(df):
     """
     mem = df.memory_usage().sum() / 1024 ** 2
     return '{:.2f} MB'.format(mem)
+
 
 def make_redact(df, cols):
     df = df.drop(columns=cols)
