@@ -27,6 +27,7 @@ def run_pipeline_from_source(data_folder, filename='Arrests.bz2'):
             # .pipe(make_titlecase, cols=['first_name', 'last_name', 'middle_name'])
             .pipe(make_redact, cols=redact_columns)
             .pipe(make_arrest_year_month)
+            .pipe(categorize_charge_cols)
           )
 
     # drop unnecessary columns
