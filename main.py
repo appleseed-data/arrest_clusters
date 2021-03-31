@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # default read from source to false
     read_from_source = True
     # if none, source_filename defaults to "Arrests.bz2"
-    source_filename = "Arrests_-_Authorized-Access-Only_Version.csv"
+    source_filename = "Arrests_-_Authorized-Access-Only_Version.bz2"
 
     if run_dataprep:
         # set read_from_source to true if have access to source data
