@@ -6,6 +6,11 @@ from src.utilities.config_general import *
 import pandas as pd
 import re
 import numpy as np
+import multiprocessing as mp
+from tqdm import tqdm
+from functools import partial
+
+CPUs = mp.cpu_count()
 
 charge_columns = ['charge_1_description'
                  , 'charge_2_description'
@@ -99,7 +104,7 @@ def reduce_precision(df, charge_cols=None):
     """
     logging.info(f'Starting DataFrame Optimization. Starting with {mem_usage(df)} memory.')
     cols_to_convert = []
-    date_strings = ['_date', 'date_', 'date']
+    date_strings = ['_date', 'date_']
 
     for col in df.columns:
         col_type = df[col].dtype
@@ -111,76 +116,93 @@ def reduce_precision(df, charge_cols=None):
         cols_to_convert = [x for x in cols_to_convert if x not in charge_cols]
         df[charge_cols] = df[charge_cols].astype('string')
 
-    def _reduce_precision(x):
-        col_type = x.dtype
-        unique_data = list(x.unique())
-        bools = [True, False, 'true', 'True', 'False', 'false']
-        #TODO: account for only T or only F or 1/0 situations
-        n_unique = float(len(unique_data))
-        n_records = float(len(x))
-        cat_ratio = n_unique / n_records
+    # break out the dataframe into a list of series to be worked on in parallel
+    lst_of_series = [df[d] for d in cols_to_convert]
+    pool = mp.Pool(CPUs)
+    pbar = tqdm(lst_of_series, desc='Running DataFrame Optimization with multiprocessing')
+    _reduce_precision_ = partial(_reduce_precision, date_strings=date_strings)
+    list_of_converted = list(pool.imap(_reduce_precision_, pbar))
+    pool.close()
+    pool.join()
 
-        try:
-            unique_data.remove(np.nan)
-        except:
-            pass
+    # update the dataframe based on the convered records
+    for (col_name, col_series) in list_of_converted:
+        df[col_name] = col_series
 
-        if 'int' in str(col_type):
-            c_min = x.min()
-            c_max = x.max()
-
-            if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
-                x= x.astype(np.int8)
-            elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
-                x = x.astype(np.int16)
-            elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
-                x = x.astype(np.int32)
-            elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
-                x = x.astype(np.int64)
-
-                # TODO: set precision to unsigned integers with nullable NA
-
-        elif 'float' in str(col_type):
-            c_min = x.min()
-            c_max = x.max()
-            if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
-                    x = x.astype(np.float16)
-            elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
-                x = x.astype(np.float32)
-            else:
-                x = x.astype(np.float64)
-
-        elif 'datetime' in col_type.name or any(i in str(x.name).lower() for i in date_strings):
-            try:
-                x = pd.to_datetime(x)
-            except:
-                pass
-
-        elif any(i in bools for i in unique_data):
-            x = x.astype('boolean')
-            #TODO: set precision to bool if boolean not needed
-
-        elif cat_ratio < .1 or n_unique < 20:
-            try:
-                x = x.str.title()
-            except:
-                pass
-
-            x = pd.Categorical(x)
-
-        elif all(isinstance(i, str) for i in unique_data):
-            x = x.astype('string')
-
-        return x
-
-    df[cols_to_convert] = df[cols_to_convert].apply(lambda x: _reduce_precision(x))
-
+    # un comment below to do conversion without MP
+    # df[cols_to_convert] = df[cols_to_convert].apply(lambda x: _reduce_precision(x))
 
     logging.info(f'Converted DF with new dtypes as follows:\n{df.dtypes}')
+
     logging.info(f'Completed DataFrame Optimization. Ending with {mem_usage(df)} memory.')
 
     return df
 
+def _reduce_precision(x, date_strings):
+    """
+    :params x: a pandas series (a column) to convert for dtype precision reduction
+    """
+    col_name = x.name
+    col_type = x.dtype
+    unique_data = list(x.unique())
+    bools = [True, False, 'true', 'True', 'False', 'false']
+    #TODO: account for only T or only F or 1/0 situations
+    n_unique = float(len(unique_data))
+    n_records = float(len(x))
+    cat_ratio = n_unique / n_records
+
+    try:
+        unique_data.remove(np.nan)
+    except:
+        pass
+
+    if 'int' in str(col_type):
+        c_min = x.min()
+        c_max = x.max()
+
+        if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
+            x= x.astype(np.int8)
+        elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+            x = x.astype(np.int16)
+        elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+            x = x.astype(np.int32)
+        elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
+            x = x.astype(np.int64)
+
+            # TODO: set precision to unsigned integers with nullable NA
+
+    elif 'float' in str(col_type):
+        c_min = x.min()
+        c_max = x.max()
+        if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
+                x = x.astype(np.float16)
+        elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
+            x = x.astype(np.float32)
+        else:
+            x = x.astype(np.float64)
+
+    elif 'datetime' in col_type.name or any(i in str(x.name).lower() for i in date_strings):
+        try:
+            x = pd.to_datetime(x)
+        except:
+            pass
+
+    elif any(i in bools for i in unique_data):
+        x = x.astype('boolean')
+        #TODO: set precision to bool if boolean not needed
+
+    elif cat_ratio < .1 or n_unique < 20:
+        try:
+            x = x.str.title()
+        except:
+            pass
+
+        x = pd.Categorical(x)
+
+    elif all(isinstance(i, str) for i in unique_data):
+        x = x.astype('string')
+
+    return col_name, x
 
 def mem_usage(df):
     """ iterate through all the columns of a dataframe and modify the data type

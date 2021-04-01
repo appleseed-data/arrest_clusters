@@ -9,6 +9,10 @@ from fuzzypanda import matching
 import joblib
 
 import multiprocessing as mp
+from tqdm import tqdm
+from functools import partial
+
+CPUs = mp.cpu_count()
 
 model_save_path = 'models/arrest_charge_classification'
 
@@ -43,7 +47,6 @@ def apply_crosswalk_directmatch(df, micro_charge_map=None, macro_charge_map=None
         macro_charge_map = macro_charge_map.set_index(micro_col)
         macro_charge_map = macro_charge_map.to_dict()[macro_col]
 
-
     # map any charges that match crosswalk exactly
     col_nums = ['1', '2', '3', '4']
     for col in col_nums:
@@ -71,47 +74,16 @@ def apply_crosswalk_fuzzymatch(df, micro_charge_map, macro_charge_map, max_edit_
     macro_charge_map = macro_charge_map.set_index(micro_col)
     macro_charge_map = macro_charge_map.to_dict()[macro_col]
 
-    def do_fuzzy_match(left_dataframe, right_dataframe, left_cols, target_cols, right_cols='description'):
-        # perform fuzzy match on source (left) column and category (right) column
-        # the match returns a value that represents the source column but that matches the category column exactly -> proxy
-        # use the proxy to match to the dictionary as a direct match
-        N = len(left_dataframe)
-        logging.info(f'-- Trying to map {N} records with fuzzy match.')
-        matching.get_fuzzy_columns(left_dataframe=left_dataframe
-                                   ,right_dataframe=right_dataframe
-                                   ,left_cols=[left_cols]
-                                   ,right_cols=[right_cols]
-                                   ,max_edit_distance=max_edit_distance)
-
-        fuzzy_col = f'fuzzy_{left_cols}'
-        left_dataframe[target_cols] = left_dataframe[fuzzy_col].map(micro_charge_dict)
-
-        left_dataframe = left_dataframe.drop(columns=[fuzzy_col])
-
-        return left_dataframe
-
+    results = []
+    # iterate through target cols with dataframe
     for charge_description, categories in target_columns:
-        logging.info(f'- Trying Fuzzy Match for {charge_description}')
-
-        for category in categories:
-            logging.info(f'- Starting {category}')
-            mapping_df = micro_charge_map if 'micro' in category else None
-            # do mapping where there is a description but no category mapping
-            df['flag'] = ~df[charge_description].isna() & df[category].isna()
-            # get a count of records that are eligible to be mapped
-            start_counts = df['flag'].value_counts()
-            logging.info(f'-- Mapping Status: {start_counts[True]} remaining that need to be mapped for {category}')
-            if mapping_df is not None:
-                # do fuzzy mapping on eligible records
-                df[df['flag']==True] = do_fuzzy_match(left_dataframe=df[df['flag']==True].copy()
-                                                      , right_dataframe=mapping_df
-                                                      , left_cols=charge_description
-                                                      , target_cols=category
-                                                      )
-                # get a new count after doing matches
-                df['flag'] = ~df[charge_description].isna() & df[category].isna()
-                end_counts = df['flag'].value_counts()
-                logging.info(f'-- After fuzzy match, there are {end_counts[True]} unmapped records remaining.')
+        # run the fuzzy match script on pandas series
+        result = run_fuzzy(df, charge_description, categories, micro_charge_map, max_edit_distance, micro_charge_dict)
+        # run_fuzzy is returning a list of one (name and series pair)
+        results.append(result[0])
+    # bring it all back together and update the main dataframe
+    for col_name, col_series in results:
+        df[col_name] = col_series
 
     for col in col_nums:
         start_count = df[f'charge_{col}_description_category_macro'].isna().sum()
@@ -125,6 +97,68 @@ def apply_crosswalk_fuzzymatch(df, micro_charge_map, macro_charge_map, max_edit_
     logging.info('Completed Fuzzy Matches.')
 
     return df
+
+
+def run_fuzzy(df, charge_description, categories, micro_charge_map, max_edit_distance, micro_charge_dict):
+    logging.info(f'- Trying Fuzzy Match for {charge_description}')
+
+    results = []
+
+    for category in categories:
+        logging.info(f'- Starting {category}')
+        # forcing logic to only map NLP model to micro categories, map macro cats based on micro in next part
+        mapping_df = micro_charge_map if 'micro' in category else None
+        # do mapping where there is a description but no category mapping
+        df['flag'] = ~df[charge_description].isna() & df[category].isna()
+        # get a count of records that are eligible to be mapped
+        start_counts = df['flag'].value_counts()
+        logging.info(f'-- Mapping Status: {start_counts[True]} remaining that need to be mapped for {category}')
+
+        if mapping_df is not None:
+            # do fuzzy mapping on eligible records
+            df[df['flag'] == True] = do_fuzzy_match(left_dataframe=df[df['flag'] == True].copy()
+                                                    , right_dataframe=mapping_df
+                                                    , left_cols=charge_description
+                                                    , target_cols=category
+                                                    , max_edit_distance=max_edit_distance
+                                                    , micro_charge_dict=micro_charge_dict
+                                                    )
+            # get a new count after doing matches
+            df['flag'] = ~df[charge_description].isna() & df[category].isna()
+            end_counts = df['flag'].value_counts()
+            logging.info(f'-- After fuzzy match, there are {end_counts[True]} unmapped records remaining.')
+
+            result = tuple((category, df[category]))
+            results.append(result)
+
+    return results
+
+
+def do_fuzzy_match(left_dataframe
+                   , right_dataframe
+                   , left_cols
+                   , target_cols
+                   , max_edit_distance
+                   , micro_charge_dict
+                   , right_cols='description'
+                   ):
+    # perform fuzzy match on source (left) column and category (right) column
+    # the match returns a value that represents the source column but that matches the category column exactly -> proxy
+    # use the proxy to match to the dictionary as a direct match
+    N = len(left_dataframe)
+    logging.info(f'-- Trying to map {N} records with fuzzy match.')
+    matching.get_fuzzy_columns(left_dataframe=left_dataframe
+                               ,right_dataframe=right_dataframe
+                               ,left_cols=[left_cols]
+                               ,right_cols=[right_cols]
+                               ,max_edit_distance=max_edit_distance)
+
+    fuzzy_col = f'fuzzy_{left_cols}'
+    left_dataframe[target_cols] = left_dataframe[fuzzy_col].map(micro_charge_dict)
+
+    left_dataframe = left_dataframe.drop(columns=[fuzzy_col])
+
+    return left_dataframe
 
 
 def apply_manual_match(df, criteria):

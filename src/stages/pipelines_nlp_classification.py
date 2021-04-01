@@ -78,29 +78,23 @@ def apply_nlp_classification_model(df, model, data_folder, filename='CPD_crosswa
     macro_charge_map = macro_charge_map.set_index(micro_col)
     macro_charge_map = macro_charge_map.to_dict()[macro_col]
 
-    for charge_description, categories in target_columns:
-        logging.info(f'- Starting NLP match for {charge_description}')
+    # run nlp match in parallel
+    pool = mp.Pool(CPUs)
+    pbar = tqdm(target_columns, desc='Running DataFrame NLP match with multiprocessing')
+    run_nlp_match_ = partial(run_nlp_match, df=df, model=model)
+    results = list(pool.imap(run_nlp_match_, pbar))
+    pool.close()
+    pool.join()
 
-        for category in categories:
-            if 'micro' in category:
-                # do mapping where there is a description but no category mapping
-                df['flag'] = ~df[charge_description].isna() & df[category].isna()
-                start_counts = df['flag'].value_counts()
-                logging.info(f'-- In {category}, there are {start_counts[True]} to classify.')
+    # uncomment next series to run nlp match in regular style
+    # results = []
+    # for target_column in target_columns:
+    #     result = run_nlp_match(df, target_column, model)
+    #     results.append(result)
 
-                temp = hero.clean(df[df['flag']==True][charge_description].copy(), pipeline=text_pipeline)
-                idx = temp.index.values.tolist()
-                predictions = model.predict(temp)
-
-                df[category].update(pd.Series(predictions, name=charge_description, index=idx))
-
-                df['flag'] = ~df[charge_description].isna() & df[category].isna()
-                end_counts = df['flag'].value_counts()
-
-                try:
-                    logging.info(f'The are {end_counts[True]} charges left to classify')
-                except:
-                    logging.info(f'Classification Status 100%. Started with {start_counts[True]} to map. Ended with {end_counts[False]} mapped. ')
+    # bring results back together
+    for col_name, col_series in results:
+        df[col_name] = col_series
 
     for col in col_nums:
         start_count = df[f'charge_{col}_description_category_macro'].isna().sum()
@@ -109,7 +103,43 @@ def apply_nlp_classification_model(df, model, data_folder, filename='CPD_crosswa
         end_count = df[f'charge_{col}_description_category_macro'].isna().sum()
         logging.info(f'Remaining NA count {end_count}')
 
-
-    df = df.drop(columns=['flag'])
+    # df = df.drop(columns=['flag'])
 
     return df
+
+
+def run_nlp_match(target_column, df, model):
+    charge_description, categories = target_column
+    logging.info(f'- Starting NLP match for {charge_description}')
+
+    results = []
+
+    logging.info(f'- Starting NLP match for {charge_description}')
+
+    for category in categories:
+        if 'micro' in category:
+            # do mapping where there is a description but no category mapping
+            df['flag'] = ~df[charge_description].isna() & df[category].isna()
+            start_counts = df['flag'].value_counts()
+            logging.info(f'-- In {category}, there are {start_counts[True]} to classify.')
+
+            temp = hero.clean(df[df['flag'] == True][charge_description].copy(), pipeline=text_pipeline)
+            idx = temp.index.values.tolist()
+            predictions = model.predict(temp)
+
+            df[category].update(pd.Series(predictions, name=charge_description, index=idx))
+
+            df['flag'] = ~df[charge_description].isna() & df[category].isna()
+            end_counts = df['flag'].value_counts()
+
+            try:
+                logging.info(f'The are {end_counts[True]} charges left to classify')
+            except:
+                logging.info(
+                    f'Classification Status 100%. Started with {start_counts[True]} to map. Ended with {end_counts[False]} mapped. ')
+
+            result = tuple((category, df[category]))
+
+            results.append(result)
+    # currently returning first element of a list of name and series pair
+    return results[0]

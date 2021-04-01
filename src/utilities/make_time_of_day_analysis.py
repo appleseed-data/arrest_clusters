@@ -71,7 +71,7 @@ def make_radar_fig(df, figures_folder):
                     , alpha=.2
                     , color='cornflowerblue'
                     )
-
+    
     misdemeanors = counted[counted['lead_charge_type'] == 'Misdemeanor'].reset_index(drop=True)
     plt.polar(misdemeanors['arrest_time_angle']
               , misdemeanors['arrest_count']
