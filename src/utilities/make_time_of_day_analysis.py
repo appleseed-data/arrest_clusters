@@ -71,7 +71,7 @@ def make_radar_fig(df, figures_folder):
                     , alpha=.2
                     , color='cornflowerblue'
                     )
-    
+
     misdemeanors = counted[counted['lead_charge_type'] == 'Misdemeanor'].reset_index(drop=True)
     plt.polar(misdemeanors['arrest_time_angle']
               , misdemeanors['arrest_count']
@@ -115,9 +115,53 @@ def make_radar_fig(df, figures_folder):
     plt.xlabel('Count of Arrests')
     plt.ylabel('Time of Day (24 hr)', labelpad=20)
     plt.tight_layout()
-    file_path = os.sep.join([figures_folder, 'tod_1_radar.png'])
+    file_path = os.sep.join([figures_folder, 'tod_1_all_radar.png'])
     plt.savefig(file_path)
     plt.show()
+
+
+    ## petty or other only
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = plt.subplot(polar="True")
+
+    petty_other = counted[counted['lead_charge_type'] == 'Petty or Other'].reset_index(drop=True)
+
+    ax.fill_between(petty_other['arrest_time_angle']
+                    , petty_other['arrest_count']
+                    , alpha=.2
+                    , color='darkkhaki'
+                    )
+
+    plt.polar(petty_other['arrest_time_angle']
+              , petty_other['arrest_count']
+              , linewidth=.1
+              , color="darkkhaki"
+              )
+
+    custom_lines = [Line2D([0], [0], color="darkkhaki", lw=4, alpha=.5),
+                    # Line2D([0], [0], color="darkkhaki", lw=4),
+                    ]
+
+    plt.legend(custom_lines
+               , ['Petty or Other']
+               # , ncol=4
+               # , fontsize='small'
+               # , loc="lower center"
+               , bbox_to_anchor=(0.1, 1)
+               )
+
+    ax.set_rlabel_position(0)
+    plt.title(
+        f'Chicago Police Department Arrest Analysis - Petty Arrests by Time of Day (24 hr Clock)\nFrom {min_date} to {max_date}')
+    plt.xticks(angles, values)
+    plt.xlabel('Count of Arrests')
+    plt.ylabel('Time of Day (24 hr)', labelpad=20)
+    plt.tight_layout()
+    file_path = os.sep.join([figures_folder, 'tod_2_radar_petty.png'])
+    plt.savefig(file_path)
+    plt.show()
+
 
 
 

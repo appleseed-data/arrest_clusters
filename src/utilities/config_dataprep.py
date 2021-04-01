@@ -118,7 +118,7 @@ def reduce_precision(df, charge_cols=None):
 
     # break out the dataframe into a list of series to be worked on in parallel
     lst_of_series = [df[d] for d in cols_to_convert]
-    
+
     pool = mp.Pool(CPUs)
     pbar = tqdm(lst_of_series, desc='Running DataFrame Optimization with multiprocessing')
     _reduce_precision_ = partial(_reduce_precision, date_strings=date_strings)
