@@ -15,15 +15,17 @@ plt.style.use('seaborn')
 
 
 def time_of_day_analysis(df
+                         , data_folder
                          , figures_folder
                          , target_charge_class='charge_1_class'
                          , target_charge_name='lead_charge'
                          , target_charge_cat_num='lead_charge_code'
                          ):
+
     logging.info('Running time_of_day_analysis()')
     # extract arrest time into digestable integers
     df = prep_time_of_day(df)
-    df = prep_beats(df, target_col='beat')
+    df = prep_beats(df, target_col='beat', data_folder=data_folder)
 
     # return min and max dates
     min_date = min(df['arrest_date']).year
@@ -54,19 +56,57 @@ def time_of_day_analysis(df
                 , 'Not Specified': {'figure_name': 'tod_arrests_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
                   }
 
-    make_radar_fig(df=df
-                   , figures_folder=figures_folder
-                   , plot_params=plot_params
-                   , max_date=max_date
-                   , min_date=min_date
-                   , charge_types=charge_types
-                   , colors=colors
-                   , grouping=grouping
-                   , values_plot=values_plot
-                   , angles_plot=angles_plot
-                   , target_charge_cat_num=target_charge_cat_num
-                   )
+    # make_radar_fig(df=df
+    #                , figures_folder=figures_folder
+    #                , plot_params=plot_params
+    #                , max_date=max_date
+    #                , min_date=min_date
+    #                , charge_types=charge_types
+    #                , colors=colors
+    #                , grouping=grouping
+    #                , values_plot=values_plot
+    #                , angles_plot=angles_plot
+    #                , target_charge_cat_num=target_charge_cat_num
+    #                )
 
+    make_unit_stats(df, charge_types=charge_types)
+
+def make_unit_stats(df, charge_types, target_charge_type='lead_charge_code_type'):
+
+    data = df[['beat', 'unit', 'arrest_time', 'lead_charge_code']].copy(deep=True)
+
+    for charge_type in charge_types:
+        if charge_type == 'Felony':
+            data[target_charge_type] = np.where(data['lead_charge_code'] > 7
+                                              , charge_type
+                                              , "None")
+        elif charge_type == 'Misdemeanor':
+            data[target_charge_type] = np.where((data['lead_charge_code'] > 4) & (data['lead_charge_code'] <= 7)
+                                              , charge_type
+                                              , data[target_charge_type])
+        elif charge_type == 'Petty or Other':
+            data[target_charge_type] = np.where((data['lead_charge_code'] > 0) & (data['lead_charge_code'] <= 4)
+                                              , charge_type
+                                              , data[target_charge_type])
+        elif charge_type == 'Not Specified':
+            data[target_charge_type] = np.where((data['lead_charge_code'] < 0)
+                                              , 'Not Specified'
+                                              , data[target_charge_type])
+
+    data = data.groupby(target_charge_type)
+
+    for i, group in data:
+
+        plt.figure()
+        sns.histplot(data=group
+                     , x='arrest_time'
+                     , kde=True
+                     , hue='unit'
+                     , stat='probability'
+                     , legend=False
+                     )
+        plt.title(f'Distribution of arrests by time of day and unit.\nGrouped by {i} Arrests.')
+        plt.show()
 
 
 def make_radar_fig(df
@@ -92,8 +132,6 @@ def make_radar_fig(df
 
     df = df.groupby(grouping).agg({agg_col: agg_type}).reset_index()
     df = df.rename(columns={agg_col: agg_name})
-
-    print(df.head())
 
     target_charge_type = f'{target_charge_cat_num}_type'
 

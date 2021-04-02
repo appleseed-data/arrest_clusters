@@ -31,7 +31,7 @@ if __name__ == '__main__':
         file_out = os.sep.join([data_folder, 'arrest_clusters.zip'])
         compression = dict(method='zip', archive_name=filename)
         df.to_csv(file_out, index=False, compression=compression)
-        time_of_day_analysis(df, figures_folder=figures_folder)
+        time_of_day_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
 
 
 

@@ -23,12 +23,23 @@ charge_order = [
     , 'A', 'B', 'C', 'L'
     , 'P', 'Z', 'U', "None"]
 
-def prep_beats(df, target_col='beat'):
+
+def prep_beats(df, data_folder, target_col='beat'):
     df[target_col] = df[target_col].fillna(0)
     df[target_col] = df[target_col].astype('int')
     df[target_col] = df[target_col].astype('str')
     df[target_col] = df[target_col].str.zfill(4)
-    
+
+    data_path = os.sep.join([data_folder, 'cpd_units_beats_crosswalk.csv'])
+    cpd_unit_beat_crosswalk = pd.read_csv(data_path)
+    cpd_unit_beat_crosswalk = cpd_unit_beat_crosswalk.astype('str')
+    cpd_unit_beat_crosswalk['unit'] = cpd_unit_beat_crosswalk['unit'].str.zfill(3)
+    cpd_unit_beat_crosswalk[target_col] = cpd_unit_beat_crosswalk[target_col].str.zfill(4)
+
+    mapper = cpd_unit_beat_crosswalk.set_index('beat')
+    mapper = mapper.to_dict()['unit']
+    df['unit'] = df[target_col].map(mapper)
+
     return df
 
 def prep_time_of_day(df, tgt_date_col='arrest_date', index_id='arrest_id'):
