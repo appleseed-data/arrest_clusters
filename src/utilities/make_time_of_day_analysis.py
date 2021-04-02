@@ -49,29 +49,29 @@ def time_of_day_analysis(df
     colors = ['gray', 'blue', 'darkkhaki', 'red']
     colors = dict(zip(charge_types, colors))
 
-    plot_params = {'All': {'figure_name': 'tod_arrests_all.png', 'title_nuance': 'All Arrests'}
-                , 'Felony': {'figure_name': 'tod_arrests_felony.png', 'title_nuance': 'Felony Arrests'}
-                , 'Misdemeanor': {'figure_name': 'tod_arrests_misdemeanor.png', 'title_nuance': 'Misdemeanor Arrests'}
-                , 'Petty or Other': {'figure_name': 'tod_arrests_petty_other.png', 'title_nuance': 'Petty or Other Arrests'}
-                , 'Not Specified': {'figure_name': 'tod_arrests_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
+    plot_params = {'All': {'figure_name': 'tod_arrests_radar_all.png', 'title_nuance': 'All Arrests'}
+                , 'Felony': {'figure_name': 'tod_arrests_radar_felony.png', 'title_nuance': 'Felony Arrests'}
+                , 'Misdemeanor': {'figure_name': 'tod_arrests_radar_misdemeanor.png', 'title_nuance': 'Misdemeanor Arrests'}
+                , 'Petty or Other': {'figure_name': 'tod_arrests_radar_petty_other.png', 'title_nuance': 'Petty or Other Arrests'}
+                , 'Not Specified': {'figure_name': 'tod_arrests_radar_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
                   }
 
-    # make_radar_fig(df=df
-    #                , figures_folder=figures_folder
-    #                , plot_params=plot_params
-    #                , max_date=max_date
-    #                , min_date=min_date
-    #                , charge_types=charge_types
-    #                , colors=colors
-    #                , grouping=grouping
-    #                , values_plot=values_plot
-    #                , angles_plot=angles_plot
-    #                , target_charge_cat_num=target_charge_cat_num
-    #                )
+    make_radar_fig(df=df
+                   , figures_folder=figures_folder
+                   , plot_params=plot_params
+                   , max_date=max_date
+                   , min_date=min_date
+                   , charge_types=charge_types
+                   , colors=colors
+                   , grouping=grouping
+                   , values_plot=values_plot
+                   , angles_plot=angles_plot
+                   , target_charge_cat_num=target_charge_cat_num
+                   )
 
-    make_unit_stats(df, charge_types=charge_types)
+    make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
 
-def make_unit_stats(df, charge_types, target_charge_type='lead_charge_code_type'):
+def make_unit_stats(df, charge_types, figures_folder, target_charge_type='lead_charge_code_type'):
 
     data = df[['beat', 'unit', 'arrest_time', 'lead_charge_code']].copy(deep=True)
 
@@ -106,6 +106,10 @@ def make_unit_stats(df, charge_types, target_charge_type='lead_charge_code_type'
                      , legend=False
                      )
         plt.title(f'Distribution of arrests by time of day and unit.\nGrouped by {i} Arrests.')
+        plt.tight_layout()
+        file_name = f'tod_arrests_hist_{i}.png'
+        file_path = os.sep.join([figures_folder, file_name])
+        plt.savefig(file_path)
         plt.show()
 
 
@@ -242,4 +246,5 @@ def make_radar_fig(df
         plt.tight_layout()
         file_path = os.sep.join([figures_folder, figure_name])
         plt.savefig(file_path)
+
         plt.show()
