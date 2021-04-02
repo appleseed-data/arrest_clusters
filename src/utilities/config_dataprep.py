@@ -23,6 +23,32 @@ charge_order = [
     , 'A', 'B', 'C', 'L'
     , 'P', 'Z', 'U', "None"]
 
+def prep_beats(df, target_col='beat'):
+    df[target_col] = df[target_col].fillna(0)
+    df[target_col] = df[target_col].astype('int')
+    df[target_col] = df[target_col].astype('str')
+    df[target_col] = df[target_col].str.zfill(4)
+    
+    return df
+
+def prep_time_of_day(df, tgt_date_col='arrest_date', index_id='arrest_id'):
+    """
+    break out arrest times into consumable integers for grouping
+    # ref: https://stackoverflow.com/questions/32344533/how-do-i-round-datetime-column-to-nearest-quarter-hour
+    """
+
+    df[min_col] = df[tgt_date_col].dt.round('15min')
+    df[min_col] = df[min_col].dt.minute / 60
+    df[hr_col] = df[tgt_date_col].dt.hour
+    df[time_col] = df[hr_col] + df[min_col]
+    df[year_col] = df[tgt_date_col].dt.year
+    df[month_col] = df[tgt_date_col].dt.month
+    # monday is 0, sunday is 6
+    df[day_col] = df[tgt_date_col].dt.dayofweek
+
+    df = df.reset_index().rename(columns={'index': index_id})
+
+    return df
 
 def categorize_charge_cols(df):
     """

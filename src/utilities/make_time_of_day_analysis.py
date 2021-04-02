@@ -9,323 +9,199 @@ import datetime
 from math import pi
 import seaborn as sns
 from src.utilities.config_general import *
+from src.utilities.config_dataprep import prep_time_of_day, prep_beats
 from scipy import stats
 plt.style.use('seaborn')
 
 
-def time_of_day_analysis(df, figures_folder, target_col = 'charge_1_description_category_micro'):
+def time_of_day_analysis(df
+                         , figures_folder
+                         , target_charge_class='charge_1_class'
+                         , target_charge_name='lead_charge'
+                         , target_charge_cat_num='lead_charge_code'
+                         ):
     logging.info('Running time_of_day_analysis()')
+    # extract arrest time into digestable integers
+    df = prep_time_of_day(df)
+    df = prep_beats(df, target_col='beat')
 
-    make_radar_fig(df, figures_folder)
-
-
-def make_radar_fig(df, figures_folder):
+    # return min and max dates
     min_date = min(df['arrest_date']).year
     max_date = max(df['arrest_date']).year
+    # return hours of the day as categories for plotting (24 hr clock)
+    plot_categories = df[hr_col].astype('str').unique().tolist()
+    plot_categories.sort()
+    # return number of categories for plotting
+    n_plot_categories = len(plot_categories)
+    # prepare polar plot with category values and angles
+    values_plot = [n for n in range(n_plot_categories)]
+    angles_plot = [n / float(n_plot_categories) * 2 * pi for n in range(n_plot_categories)]
+    # extract lead charge for each target record
+    df[target_charge_name] = df[target_charge_class]
+    # extract ordered num category for each target record
+    df[target_charge_cat_num] = df[target_charge_class].cat.codes
 
-    min_col = 'arrest_minute'
-    hr_col = 'arrest_hour'
-    time_col = 'arrest_time'
-    year_col = 'arrest_year'
-    month_col = 'arrest_month'
-    day_col = 'arrest_day'
-    # ref: https://stackoverflow.com/questions/32344533/how-do-i-round-datetime-column-to-nearest-quarter-hour
+    grouping = [target_charge_cat_num, year_col, month_col, day_col, hr_col]
 
-    df[min_col] = df['arrest_date'].dt.round('15min')
-    df[min_col] = df[min_col].dt.minute / 60
-    df[hr_col] = df['arrest_date'].dt.hour
-    df[time_col] = df[hr_col] + df[min_col]
-    df[year_col] = df['arrest_date'].dt.year
-    df[month_col] = df['arrest_date'].dt.month
-    # monday is 0, sunday is 6
-    df[day_col] = df['arrest_date'].dt.dayofweek
+    charge_types = ['Felony', 'Misdemeanor', 'Petty or Other', 'Not Specified']
+    colors = ['gray', 'blue', 'darkkhaki', 'red']
+    colors = dict(zip(charge_types, colors))
 
-    df = df.reset_index().rename(columns={'index': 'arrest_id'})
+    plot_params = {'All': {'figure_name': 'tod_arrests_all.png', 'title_nuance': 'All Arrests'}
+                , 'Felony': {'figure_name': 'tod_arrests_felony.png', 'title_nuance': 'Felony Arrests'}
+                , 'Misdemeanor': {'figure_name': 'tod_arrests_misdemeanor.png', 'title_nuance': 'Misdemeanor Arrests'}
+                , 'Petty or Other': {'figure_name': 'tod_arrests_petty_other.png', 'title_nuance': 'Petty or Other Arrests'}
+                , 'Not Specified': {'figure_name': 'tod_arrests_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
+                  }
 
-    categories1 = df[hr_col].astype('str').unique().tolist()
-    categories1.sort()
-
-    N1 = len(categories1)
-
-    values1 = [n for n in range(N1)]
-    angles1 = [n / float(N1) * 2 * pi for n in range(N1)]
-
-    df['lead_charge'] = df['charge_1_class']
-    df['lead_charge_code'] = df['charge_1_class'].cat.codes
-
-    counted = df.groupby(['lead_charge_code', year_col, month_col, day_col, hr_col]).agg(
-        arrest_count=('arrest_id', 'count')).reset_index()
-
-    counted["lead_charge_type"] = np.where(counted['lead_charge_code'] > 7, 'Felony', "None")
-    counted["lead_charge_type"] = np.where((counted['lead_charge_code'] > 4) & (counted['lead_charge_code'] <= 7),
-                                           'Misdemeanor', counted['lead_charge_type'])
-    counted["lead_charge_type"] = np.where((counted['lead_charge_code'] > 0) & (counted['lead_charge_code'] <= 4),
-                                           'Petty or Other', counted['lead_charge_type'])
-    counted["lead_charge_type"] = np.where((counted['lead_charge_code'] < 0), 'Not Specified', counted['lead_charge_type'])
-
-    counted = counted.reset_index(drop=True)
-
-    categories2 = counted[hr_col].astype('str').unique().tolist()
-
-    categories2.sort()
-
-    N2 = len(categories2)
-
-    values2 = [n for n in range(N2)]
-    angles2 = [n / float(N1) * 2 * pi for n in range(N2)]
-
-    map_v_a_2 = dict(zip(values2, angles2))
-
-    counted['arrest_time_angle'] = counted[hr_col].map(map_v_a_2)
-    # counted['arrest_time_angle'] = counted[hr_col].map(map_v_a_2)
-
-    fig = plt.figure(figsize=(8, 8))
-    ax = plt.subplot(polar="True")
-
-    ax.fill_between(counted['arrest_time_angle']
-                    , counted['arrest_count']
-                    , alpha=.2
-                    , color='cornflowerblue'
-                    )
-
-    misdemeanors = counted[counted['lead_charge_type'] == 'Misdemeanor'].reset_index(drop=True)
-    misdemeanors['arrest_count_zscore'] = np.abs(stats.zscore(misdemeanors['arrest_count']))
-    misdemeanors = misdemeanors[misdemeanors['arrest_count_zscore'] <= 3].reset_index(drop=True)
-
-    plt.polar(misdemeanors['arrest_time_angle']
-              , misdemeanors['arrest_count']
-              , linewidth=.1
-              , alpha=.5
-              , color="gray"
-              )
-
-    felonies = counted[counted['lead_charge_type'] == 'Felony'].reset_index(drop=True)
-    felonies['arrest_count_zscore'] = np.abs(stats.zscore(felonies['arrest_count']))
-    felonies = felonies[felonies['arrest_count_zscore'] <= 3].reset_index(drop=True)
-    plt.polar(felonies['arrest_time_angle']
-              , felonies['arrest_count']
-              , linewidth=.1
-              , color="blue"
-              )
-
-    petty_other = counted[counted['lead_charge_type'] == 'Petty or Other'].reset_index(drop=True)
-    petty_other['arrest_count_zscore'] = np.abs(stats.zscore(petty_other['arrest_count']))
-    petty_other = petty_other[petty_other['arrest_count_zscore'] <= 3].reset_index(drop=True)
-
-    plt.polar(petty_other['arrest_time_angle']
-              , petty_other['arrest_count']
-              , linewidth=.1
-              , color="darkkhaki"
-              )
-
-    not_specified = counted[counted['lead_charge_type'] == 'Not Specified'].reset_index(drop=True)
-    not_specified['arrest_count_zscore'] = np.abs(stats.zscore(not_specified['arrest_count']))
-    not_specified = not_specified[not_specified['arrest_count_zscore'] <= 3].reset_index(drop=True)
-
-    plt.polar(not_specified['arrest_time_angle']
-              , not_specified['arrest_count']
-              , linewidth=.1
-              , color="red"
-              )
-
-    custom_lines = [Line2D([0], [0], color="darkkhaki", lw=4, alpha=.5),
-                    Line2D([0], [0], color="blue", lw=4),
-                    Line2D([0], [0], color="gray", lw=4),
-                    Line2D([0], [0], color="red", lw=4),
-                    Line2D([0], [0], color="cornflowerblue", lw=4),
-                    ]
-
-    plt.legend(custom_lines
-               , ['Petty or Other', 'Felony', 'Misdemeanor', 'Not Specified', 'All']
-               # , ncol=4
-               # , fontsize='small'
-               # , loc="lower center"
-               , bbox_to_anchor=(0.1, 1)
-               )
-
-    ax.set_rlabel_position(0)
-    plt.title(
-        f'Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)\nFrom {min_date} to {max_date} n={len(counted)} *Outliers Removed')
-    plt.xticks(angles1, values1)
-    plt.xlabel('Count of Arrests')
-    plt.ylabel('Time of Day (24 hr)', labelpad=20)
-    plt.tight_layout()
-    file_path = os.sep.join([figures_folder, 'tod_1_all_radar_filter_outliers.png'])
-    plt.savefig(file_path)
-    plt.show()
-
-    ## petty or other only
-
-    ###
-
-    ###
-
-    fig = plt.figure(figsize=(8, 8))
-    ax = plt.subplot(polar="True")
-
-    petty_other = counted[counted['lead_charge_type'] == 'Petty or Other'].reset_index(drop=True)
-
-    petty_other['arrest_count_zscore'] = np.abs(stats.zscore(petty_other['arrest_count']))
-
-    ax.fill_between(petty_other['arrest_time_angle']
-                    , petty_other['arrest_count']
-                    , alpha=.2
-                    , color='darkkhaki'
-                    )
-
-    plt.polar(petty_other['arrest_time_angle']
-              , petty_other['arrest_count']
-              , linewidth=.1
-              , color="darkkhaki"
-              )
-
-    custom_lines = [Line2D([0], [0], color="darkkhaki", lw=4, alpha=.5),
-                    # Line2D([0], [0], color="darkkhaki", lw=4),
-                    ]
-
-    plt.legend(custom_lines
-               , ['Petty or Other']
-               # , ncol=4
-               # , fontsize='small'
-               # , loc="lower center"
-               , bbox_to_anchor=(0.1, 1)
-               )
-
-    ax.set_rlabel_position(0)
-    plt.title(
-        f'Chicago Police Department Arrest Analysis - Petty Arrests by Time of Day (24 hr Clock)\nFrom {min_date} to {max_date} n={len(petty_other)}')
-    plt.xticks(angles2, values2)
-    plt.xlabel('Count of Arrests')
-    plt.ylabel('Time of Day (24 hr)', labelpad=20)
-    plt.tight_layout()
-    file_path = os.sep.join([figures_folder, 'tod_2_radar_petty.png'])
-    plt.savefig(file_path)
-    plt.show()
-
-    petty_other = petty_other[petty_other['arrest_count_zscore'] <= 3].reset_index(drop=True)
-
-    fig = plt.figure(figsize=(8, 8))
-    ax = plt.subplot(polar="True")
-
-    ax.fill_between(petty_other['arrest_time_angle']
-                    , petty_other['arrest_count']
-                    , alpha=.2
-                    , color='darkkhaki'
-                    )
-
-    plt.polar(petty_other['arrest_time_angle']
-              , petty_other['arrest_count']
-              , linewidth=.1
-              , color="darkkhaki"
-              )
-
-    plt.polar(not_specified['arrest_time_angle']
-              , not_specified['arrest_count']
-              , linewidth=.1
-              , color="red"
-              )
-
-    custom_lines = [Line2D([0], [0], color="darkkhaki", lw=4, alpha=.5),
-                    Line2D([0], [0], color="red", lw=4),
-                    ]
-
-    plt.legend(custom_lines
-               , ['Petty or Other', 'Not Specified']
-               # , ncol=4
-               # , fontsize='small'
-               # , loc="lower center"
-               , bbox_to_anchor=(0.1, 1)
-               )
-
-    ax.set_rlabel_position(0)
-    plt.title(
-        f'Chicago Police Department Arrest Analysis - Petty Arrests by Time of Day (24 hr Clock)\nFrom {min_date} to {max_date} n={len(petty_other)} *Outliers Removed')
-    plt.xticks(angles2, values2)
-    plt.xlabel('Count of Arrests')
-    plt.ylabel('Time of Day (24 hr)', labelpad=20)
-    plt.tight_layout()
-    file_path = os.sep.join([figures_folder, 'tod_2_radar_petty_filter_outliers.png'])
-    plt.savefig(file_path)
-    plt.show()
+    make_radar_fig(df=df
+                   , figures_folder=figures_folder
+                   , plot_params=plot_params
+                   , max_date=max_date
+                   , min_date=min_date
+                   , charge_types=charge_types
+                   , colors=colors
+                   , grouping=grouping
+                   , values_plot=values_plot
+                   , angles_plot=angles_plot
+                   , target_charge_cat_num=target_charge_cat_num
+                   )
 
 
 
+def make_radar_fig(df
+                   , figures_folder
+                   , max_date
+                   , min_date
+                   , values_plot
+                   , angles_plot
+                   , target_charge_cat_num
+                   , charge_types
+                   , colors
+                   , plot_params
+                   , grouping=None
+                   , agg_col='arrest_id'
+                   , agg_type='count'
+                   , angle_name='arrest_time_angle'
+                   , filter_outliers=3
+                   , title_base='Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)'
+                   ):
 
+    agg_name = f'{agg_col}_{agg_type}'
+    zscore_col = f'{agg_name}_zscore'
 
+    df = df.groupby(grouping).agg({agg_col: agg_type}).reset_index()
+    df = df.rename(columns={agg_col: agg_name})
 
+    print(df.head())
 
+    target_charge_type = f'{target_charge_cat_num}_type'
 
+    for plot_param_type, plot_param_info in plot_params.items():
+        figure_name = plot_param_info['figure_name']
+        title_nuance = plot_param_info['title_nuance']
 
-    # group = [time_col, target_col]
-    # x1 = df.groupby(group)[[target_col]].agg('count').rename(columns={target_col: 'count'}).reset_index()
-    # x1[time_col] = pd.to_datetime(x1[time_col], format='%H:%M:%S')
-    # x1 = x1.set_index(time_col)
-    # n = len(x1)
-    # plt.figure()
-    # ax = sns.scatterplot(x=x1.index
-    #                      , y=x1['count']
-    #                      , hue=x1[target_col]
-    #                      , legend=True
-    #                      )
-    # ax.xaxis.set_major_locator(mdates.HourLocator())
-    # ax.set_xlim(x1.index[0], x1.index[-1])
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
-    # ax.tick_params(axis="x", rotation=45)
-    # plt.title(
-    #     f'Preliminary Time of Day Analysis for Chicago Police Department Arrests\nLead Charge Category (Micro) n={n} from {min_date} to {max_date}')
-    # ax.legend(loc='upper left', fontsize='xx-small', ncol=2)
-    # filename = f'cpd_tod_{target_col}.png'
-    # data_file = os.sep.join([figures_folder, filename])
-    # plt.savefig(data_file)
-    # plt.show()
-    #
-    # df[time_col] = df['arrest_date'].dt.time
-    # target_col = 'charge_1_description_category_macro'
-    # group = [time_col, target_col]
-    # x2 = df.groupby(group)[[target_col]].agg('count').rename(columns={target_col: 'count'}).reset_index()
-    # x2[time_col] = pd.to_datetime(x2[time_col], format='%H:%M:%S')
-    # x2 = x2.set_index(time_col)
-    # n = len(x2)
-    #
-    # plt.figure()
-    # ax = sns.scatterplot(x=x2.index
-    #                      , y=x2['count']
-    #                      , hue=x2[target_col]
-    #                      , legend=True
-    #                      )
-    # ax.xaxis.set_major_locator(mdates.HourLocator())
-    # ax.set_xlim(x2.index[0], x2.index[-1])
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
-    # ax.tick_params(axis="x", rotation=45)
-    # plt.title(
-    #     f'Preliminary Time of Day Analysis for Chicago Police Department Arrests\nLead Charge Category (Macro) n={n} from {min_date} to {max_date}')
-    # ax.legend(loc='upper left', fontsize='x-small')
-    # filename = f'cpd_tod_{target_col}.png'
-    # data_file = os.sep.join([figures_folder, filename])
-    # plt.savefig(data_file)
-    # plt.show()
-    #
-    # df[time_col] = df['arrest_date'].dt.time
-    # target_col = 'charge_1_class'
-    # group = [time_col, target_col]
-    # x3 = df.groupby(group)[[target_col]].agg('count').rename(columns={target_col: 'count'}).reset_index()
-    # x3[time_col] = pd.to_datetime(x3[time_col], format='%H:%M:%S')
-    # x3 = x3.set_index(time_col)
-    # n = len(x3)
-    #
-    # plt.figure()
-    # ax = sns.scatterplot(x=x3.index
-    #                      , y=x3['count']
-    #                      , hue=x3[target_col]
-    #                      , legend=True
-    #                      )
-    # ax.xaxis.set_major_locator(mdates.HourLocator())
-    # ax.set_xlim(x2.index[0], x2.index[-1])
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
-    # ax.tick_params(axis="x", rotation=45)
-    # ax.legend(loc='upper left', fontsize='x-small', ncol=2)
-    # plt.title(f'Preliminary Time of Day Analysis for Chicago Police Department Arrests\nArrest Charge Class n={n} from {min_date} to {max_date}')
-    # filename = f'cpd_tod_{target_col}.png'
-    # data_file = os.sep.join([figures_folder, filename])
-    # plt.savefig(data_file)
-    # plt.show()
+        if plot_param_type == 'All':
+            charge_types = charge_types
+        elif plot_param_type == 'Felony':
+            charge_types = ['Felony']
+        elif plot_param_type == 'Misdemeanor':
+            charge_types = ['Misdemeanor']
+        elif plot_param_type == 'Petty or Other':
+            charge_types = ['Petty or Other']
+        elif plot_param_type == 'Not Specified':
+            charge_types = ['Not Specified']
+
+        title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={len(df)}'
+
+        for charge_type in charge_types:
+            if charge_type == 'Felony':
+                df[target_charge_type] = np.where(df[target_charge_cat_num] > 7
+                                                  , charge_type
+                                                  , "None")
+            elif charge_type == 'Misdemeanor':
+                df[target_charge_type] = np.where((df[target_charge_cat_num] > 4) & (df[target_charge_cat_num] <= 7)
+                                                  , charge_type
+                                                  , df[target_charge_type])
+            elif charge_type == 'Petty or Other':
+                df[target_charge_type] = np.where((df[target_charge_cat_num] > 0) & (df[target_charge_cat_num] <= 4)
+                                                  , charge_type
+                                                  , df[target_charge_type])
+            elif charge_type == 'Not Specified':
+                df[target_charge_type] = np.where((df[target_charge_cat_num] < 0)
+                                                  , 'Not Specified'
+                                                  , df[target_charge_type])
+
+        df = df.reset_index(drop=True)
+
+        map_values2angles = dict(zip(values_plot, angles_plot))
+
+        df[angle_name] = df[hr_col].map(map_values2angles)
+
+        fig = plt.figure(figsize=(8, 8))
+        ax = plt.subplot(polar="True")
+        legend_entries = []
+
+        if plot_param_type == 'All':
+
+            ax.fill_between(df[angle_name]
+                            , df[agg_name]
+                            , alpha=.2
+                            , color='cornflowerblue'
+                            )
+
+            legend_entry = ('All', Line2D([0], [0], color="cornflowerblue", lw=4))
+
+            legend_entries.append(legend_entry)
+
+        for charge_type in charge_types:
+            df_plot = df[df[target_charge_type] == charge_type].reset_index(drop=True)
+
+            if filter_outliers is not None:
+                df_plot[zscore_col] = np.abs(stats.zscore(df_plot[agg_name]))
+                df_plot = df_plot[df_plot[zscore_col] <= filter_outliers].reset_index(drop=True)
+
+            if len(charge_types) == 1:
+                ax.fill_between(df_plot[angle_name]
+                                , df_plot[agg_name]
+                                , alpha=.2
+                                , color=colors[charge_type]
+                                )
+
+                legend_entry = ('All', Line2D([0], [0], color=colors[charge_type], lw=4, alpha=.2))
+
+                legend_entries.append(legend_entry)
+
+            plt.polar(df_plot[angle_name]
+                      , df_plot[agg_name]
+                      , linewidth=.1
+                      , color=colors[charge_type]
+                      )
+
+            legend_entry = (charge_type, Line2D([0], [0], color=colors[charge_type], lw=4))
+            legend_entries.append(legend_entry)
+
+        legend_symbols = []
+        legend_names = []
+
+        for i in legend_entries:
+            legend_names.append(i[0])
+            legend_symbols.append(i[1])
+
+        plt.legend(legend_symbols
+                   , legend_names
+                   , bbox_to_anchor=(0.1, 1)
+                   )
+        ax.set_rlabel_position(0)
+
+        if filter_outliers is not None:
+            title = title + ' *Outliers Removed'
+
+        plt.title(title)
+        plt.xticks(angles_plot, values_plot)
+        plt.xlabel('Count of Arrests')
+        plt.ylabel('Time of Day (24 hr)', labelpad=20)
+        plt.tight_layout()
+        file_path = os.sep.join([figures_folder, figure_name])
+        plt.savefig(file_path)
+        plt.show()
