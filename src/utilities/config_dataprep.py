@@ -23,13 +23,22 @@ charge_order = [
     , 'A', 'B', 'C', 'L'
     , 'P', 'Z', 'U', "None"]
 
+def prep_districts(df, target_col='district'):
+    logging.info('prep_districts() Converting district data to string.')
+    df[target_col] = df[target_col].fillna(0)
+    df[target_col] = df[target_col].astype('int')
+    df[target_col] = df[target_col].astype('str')
+    return df
 
-def prep_beats(df, data_folder, target_col='beat'):
+
+def prep_beats(df, data_folder, target_col='beat', crosswalk_file='cpd_units_beats_crosswalk.csv'):
+    logging.info('prep_beats() Converting beats and unit data to string')
     df[target_col] = df[target_col].fillna(0)
     df[target_col] = df[target_col].astype('int')
     df[target_col] = df[target_col].astype('str')
     df[target_col] = df[target_col].str.zfill(4)
 
+    logging.info(f'Reading unit beat crosswalk from {crosswalk_file}')
     data_path = os.sep.join([data_folder, 'cpd_units_beats_crosswalk.csv'])
     cpd_unit_beat_crosswalk = pd.read_csv(data_path)
     cpd_unit_beat_crosswalk = cpd_unit_beat_crosswalk.astype('str')
