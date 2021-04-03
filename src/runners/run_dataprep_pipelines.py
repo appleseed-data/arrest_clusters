@@ -5,7 +5,7 @@ from src.utilities.config_general import *
 import pandas as pd
 
 
-def run_dataprep_pipeline(data_folder, read_from_source=False, source_filename=None):
+def run_dataprep_pipeline(data_folder, models_folder, read_from_source=False, source_filename=None):
     # read from source if source csv is from chicago data portal
     # if false, read from redacted file (public facing)
     if read_from_source:
@@ -34,6 +34,6 @@ def run_dataprep_pipeline(data_folder, read_from_source=False, source_filename=N
             filename = 'Arrests.bz2'
         df = run_pipeline_from_source(data_folder, filename=filename)
     else:
-        df = run_charge_classification(data_folder, filename='arrests_redacted.bz2')
+        df = run_charge_classification(data_folder, models_folder, filename='arrests_redacted.bz2')
 
     return df

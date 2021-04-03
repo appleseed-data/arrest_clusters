@@ -23,6 +23,7 @@ charge_order = [
     , 'A', 'B', 'C', 'L'
     , 'P', 'Z', 'U', "None"]
 
+
 def prep_districts(df, target_col='district'):
     logging.info('prep_districts() Converting district data to string.')
     df[target_col] = df[target_col].fillna(0)
@@ -51,6 +52,7 @@ def prep_beats(df, data_folder, target_col='beat', crosswalk_file='cpd_units_bea
 
     return df
 
+
 def prep_time_of_day(df, tgt_date_col='arrest_date', index_id='arrest_id'):
     """
     break out arrest times into consumable integers for grouping
@@ -69,6 +71,7 @@ def prep_time_of_day(df, tgt_date_col='arrest_date', index_id='arrest_id'):
     df = df.reset_index().rename(columns={'index': index_id})
 
     return df
+
 
 def categorize_charge_cols(df):
     """
@@ -185,6 +188,7 @@ def reduce_precision(df, charge_cols=None):
 
     return df
 
+
 def _reduce_precision(x, date_strings):
     """
     :params x: a pandas series (a column) to convert for dtype precision reduction
@@ -250,6 +254,7 @@ def _reduce_precision(x, date_strings):
         x = x.astype('string')
 
     return col_name, x
+
 
 def mem_usage(df):
     """ iterate through all the columns of a dataframe and modify the data type

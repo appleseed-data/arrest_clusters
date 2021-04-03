@@ -8,6 +8,7 @@ if __name__ == '__main__':
     # set path to data folder
     data_folder = os.sep.join([os.environ['PWD'], 'data'])
     figures_folder = os.sep.join([os.environ['PWD'], 'figures'])
+    models_folder = os.sep.join([os.environ['PWD'], 'models'])
 
     # set dataprep to false to read prepared data for analysis
     # set dataprep to true to run prediction and fill charge categories
@@ -20,7 +21,11 @@ if __name__ == '__main__':
     if run_dataprep:
         # set read_from_source to true if have access to source data
         # default to false runs data prep from redacted arrest data
-        df = run_dataprep_pipeline(read_from_source=read_from_source, data_folder=data_folder, source_filename=source_filename)
+        df = run_dataprep_pipeline(read_from_source=read_from_source
+                                   , data_folder=data_folder
+                                   , models_folder=models_folder
+                                   , source_filename=source_filename
+                                   )
     else:
         # set full path to target data
         filename = 'arrests_redacted_classified.bz2'

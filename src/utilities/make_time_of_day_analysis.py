@@ -52,20 +52,20 @@ def time_of_day_analysis(df
                 , 'Not Specified': {'figure_name': 'tod_arrests_radar_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
                   }
 
-    make_radar_fig(df=df
-                   , figures_folder=figures_folder
-                   , plot_params=plot_params
-                   , max_date=max_date
-                   , min_date=min_date
-                   , charge_types=charge_types
-                   , colors=colors
-                   , grouping=grouping
-                   , values_plot=values_plot
-                   , angles_plot=angles_plot
-                   , target_charge_cat_num=target_charge_cat_num
-                   )
+    # make_radar_fig(df=df
+    #                , figures_folder=figures_folder
+    #                , plot_params=plot_params
+    #                , max_date=max_date
+    #                , min_date=min_date
+    #                , charge_types=charge_types
+    #                , colors=colors
+    #                , grouping=grouping
+    #                , values_plot=values_plot
+    #                , angles_plot=angles_plot
+    #                , target_charge_cat_num=target_charge_cat_num
+    #                )
 
-    make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
+    # make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
     make_unit_network(df, charge_types=charge_types, figures_folder=figures_folder)
 
 
@@ -81,10 +81,10 @@ def make_unit_network(df, charge_types, figures_folder, target_charge_type='char
             , 'arrest_month'
             , 'arrest_day'
             , 'arrest_time'
+            , 'charge_1_description'
             , target_charge_type
             , lead_charge_code
                ]].copy(deep=True)
-
 
     for charge_type in charge_types:
         if charge_type == 'Felony':
@@ -103,6 +103,8 @@ def make_unit_network(df, charge_types, figures_folder, target_charge_type='char
             data[lead_charge_code_type] = np.where((data[lead_charge_code] < 0)
                                               , 'Not Specified'
                                               , data[lead_charge_code_type])
+
+    #TODO analyze where police related is True or False
 
 
 
