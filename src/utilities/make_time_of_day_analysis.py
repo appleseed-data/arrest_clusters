@@ -106,7 +106,13 @@ def make_unit_network(df, charge_types, figures_folder, target_charge_type='char
 
 
 
-def make_unit_stats(df, charge_types, figures_folder, target_charge_type='lead_charge_code_type'):
+def make_unit_stats(df
+                    , charge_types
+                    , figures_folder
+                    , target_charge_type='lead_charge_code_type'
+                    , filter_outliers=3
+                    ):
+    logging.info('make_unit_stats() Starting Stats Analysis by Unit')
 
     data = df[['beat', 'unit', 'arrest_time', 'lead_charge_code']].copy(deep=True)
 
@@ -137,9 +143,10 @@ def make_unit_stats(df, charge_types, figures_folder, target_charge_type='lead_c
                      , x='arrest_time'
                      , kde=True
                      , hue='unit'
-                     , stat='probability'
+                     , stat='density'
                      , legend=False
                      , common_norm=True
+                     , element='step'
                      )
         plt.title(f'Distribution of arrests by time of day and unit.\nGrouped by {i} Arrests.')
         plt.tight_layout()
@@ -166,7 +173,7 @@ def make_radar_fig(df
                    , filter_outliers=3
                    , title_base='Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)'
                    ):
-
+    logging.info('make_radar_fig() Starting Time of Day Analysis')
     agg_name = f'{agg_col}_{agg_type}'
     zscore_col = f'{agg_name}_zscore'
 
@@ -249,8 +256,8 @@ def make_radar_fig(df
                 legend_entry = ('All', Line2D([0], [0], color=colors[charge_type], lw=4, alpha=.2))
 
                 legend_entries.append(legend_entry)
-
-                title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={len(df_plot)}'
+                pct_of_total = round((len(df_plot) / len(df)) * 100, 1)
+                title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={pct_of_total}% of Total'
 
             plt.polar(df_plot[angle_name]
                       , df_plot[agg_name]
