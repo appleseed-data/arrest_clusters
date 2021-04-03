@@ -55,7 +55,7 @@ def prep_time_of_day(df, tgt_date_col='arrest_date', index_id='arrest_id'):
     df[year_col] = df[tgt_date_col].dt.year
     df[month_col] = df[tgt_date_col].dt.month
     # monday is 0, sunday is 6
-    df[day_col] = df[tgt_date_col].dt.dayofweek
+    df[day_col] = df[tgt_date_col].dt.day
 
     df = df.reset_index().rename(columns={'index': index_id})
 
