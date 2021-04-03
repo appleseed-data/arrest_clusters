@@ -139,6 +139,7 @@ def make_unit_stats(df, charge_types, figures_folder, target_charge_type='lead_c
                      , hue='unit'
                      , stat='probability'
                      , legend=False
+                     , common_norm=True
                      )
         plt.title(f'Distribution of arrests by time of day and unit.\nGrouped by {i} Arrests.')
         plt.tight_layout()
@@ -248,6 +249,8 @@ def make_radar_fig(df
                 legend_entry = ('All', Line2D([0], [0], color=colors[charge_type], lw=4, alpha=.2))
 
                 legend_entries.append(legend_entry)
+
+                title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={len(df_plot)}'
 
             plt.polar(df_plot[angle_name]
                       , df_plot[agg_name]
