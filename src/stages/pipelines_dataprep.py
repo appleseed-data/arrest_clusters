@@ -29,6 +29,7 @@ def run_pipeline_from_source(data_folder, filename='Arrests.bz2'):
             .pipe(make_arrest_year_month)
             .pipe(categorize_charge_cols)
             .pipe(prep_districts)
+            .pipe(prep_beats, data_folder=data_folder)
             .pipe(prep_time_of_day)
           )
 
@@ -39,7 +40,7 @@ def run_pipeline_from_source(data_folder, filename='Arrests.bz2'):
     filename='arrests_redacted.bz2'
     data_file = os.sep.join([data_folder, filename])
     df.to_pickle(data_file)
-    logging.info('--Completed arrest data pipeline')
+    logging.info(f'--Completed arrest data pipeline. Write dataframe to {data_file}')
     logging.info('To run analysis, re-run and set data_prep read from source to False')
 
     return df

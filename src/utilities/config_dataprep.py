@@ -56,7 +56,7 @@ def prep_time_of_day(df, tgt_date_col='arrest_date', index_id='arrest_id'):
     break out arrest times into consumable integers for grouping
     # ref: https://stackoverflow.com/questions/32344533/how-do-i-round-datetime-column-to-nearest-quarter-hour
     """
-
+    logging.info('prep_time_of_day() extracting time of day columns')
     df[min_col] = df[tgt_date_col].dt.round('15min')
     df[min_col] = df[min_col].dt.minute / 60
     df[hr_col] = df[tgt_date_col].dt.hour

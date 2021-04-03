@@ -23,10 +23,6 @@ def time_of_day_analysis(df
                          ):
 
     logging.info('Running time_of_day_analysis()')
-    # extract arrest time into digestable integers
-    # df = prep_time_of_day(df)
-    # df = prep_beats(df, target_col='beat', data_folder=data_folder)
-
     # return min and max dates
     min_date = min(df['arrest_date']).year
     max_date = max(df['arrest_date']).year
@@ -56,26 +52,24 @@ def time_of_day_analysis(df
                 , 'Not Specified': {'figure_name': 'tod_arrests_radar_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
                   }
 
-    # make_radar_fig(df=df
-    #                , figures_folder=figures_folder
-    #                , plot_params=plot_params
-    #                , max_date=max_date
-    #                , min_date=min_date
-    #                , charge_types=charge_types
-    #                , colors=colors
-    #                , grouping=grouping
-    #                , values_plot=values_plot
-    #                , angles_plot=angles_plot
-    #                , target_charge_cat_num=target_charge_cat_num
-    #                )
+    make_radar_fig(df=df
+                   , figures_folder=figures_folder
+                   , plot_params=plot_params
+                   , max_date=max_date
+                   , min_date=min_date
+                   , charge_types=charge_types
+                   , colors=colors
+                   , grouping=grouping
+                   , values_plot=values_plot
+                   , angles_plot=angles_plot
+                   , target_charge_cat_num=target_charge_cat_num
+                   )
 
-    # make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
+    make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
     make_unit_network(df, charge_types=charge_types, figures_folder=figures_folder)
 
 
 def make_unit_network(df, charge_types, figures_folder, target_charge_type='charge_1_description_category_macro'):
-
-    # print(df.head())
 
     lead_charge_code = 'lead_charge_code'
     lead_charge_code_type = f'{lead_charge_code}_type'
@@ -110,7 +104,6 @@ def make_unit_network(df, charge_types, figures_folder, target_charge_type='char
                                               , 'Not Specified'
                                               , data[lead_charge_code_type])
 
-    print(data)
 
 
 def make_unit_stats(df, charge_types, figures_folder, target_charge_type='lead_charge_code_type'):
