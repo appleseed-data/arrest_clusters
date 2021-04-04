@@ -11,8 +11,10 @@ import seaborn as sns
 from src.utilities.config_general import *
 from src.utilities.config_dataprep import prep_time_of_day, prep_beats
 from scipy import stats
-plt.style.use('seaborn')
 
+from zincbase import KB
+
+plt.style.use('seaborn')
 
 def time_of_day_analysis(df
                          , data_folder
@@ -21,7 +23,6 @@ def time_of_day_analysis(df
                          , target_charge_name='lead_charge'
                          , target_charge_cat_num='lead_charge_code'
                          ):
-
     logging.info('Running time_of_day_analysis()')
     # return min and max dates
     min_date = min(df['arrest_date']).year
@@ -38,74 +39,97 @@ def time_of_day_analysis(df
     df[target_charge_name] = df[target_charge_class]
     # extract ordered num category for each target record
     df[target_charge_cat_num] = df[target_charge_class].cat.codes
+    # extract flag for whether lead charge is police related or not
+    df['lead_charge_police_related'] = df['charge_1_description_police_related']
 
-    grouping = [target_charge_cat_num, year_col, month_col, day_col, hr_col]
+    grouping = ['lead_charge_police_related', target_charge_cat_num, year_col, month_col, day_col, hr_col]
 
     charge_types = ['Felony', 'Misdemeanor', 'Petty or Other', 'Not Specified']
     colors = ['gray', 'blue', 'darkkhaki', 'red']
     colors = dict(zip(charge_types, colors))
 
     plot_params = {'All': {'figure_name': 'tod_arrests_radar_all.png', 'title_nuance': 'All Arrests'}
-                , 'Felony': {'figure_name': 'tod_arrests_radar_felony.png', 'title_nuance': 'Felony Arrests'}
-                , 'Misdemeanor': {'figure_name': 'tod_arrests_radar_misdemeanor.png', 'title_nuance': 'Misdemeanor Arrests'}
-                , 'Petty or Other': {'figure_name': 'tod_arrests_radar_petty_other.png', 'title_nuance': 'Petty or Other Arrests'}
-                , 'Not Specified': {'figure_name': 'tod_arrests_radar_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
-                  }
+                 , 'Felony': {'figure_name': 'tod_arrests_radar_felony.png', 'title_nuance': 'Felony Arrests'}
+                 , 'Misdemeanor': {'figure_name': 'tod_arrests_radar_misdemeanor.png', 'title_nuance': 'Misdemeanor Arrests'}
+                 , 'Petty or Other': {'figure_name': 'tod_arrests_radar_petty_other.png', 'title_nuance': 'Petty or Other Arrests'}
+                 , 'Not Specified': {'figure_name': 'tod_arrests_radar_not_specified.png', 'title_nuance': 'Unspecified Arrests'}
+                   }
 
-    # make_radar_fig(df=df
-    #                , figures_folder=figures_folder
-    #                , plot_params=plot_params
-    #                , max_date=max_date
-    #                , min_date=min_date
-    #                , charge_types=charge_types
-    #                , colors=colors
-    #                , grouping=grouping
-    #                , values_plot=values_plot
-    #                , angles_plot=angles_plot
-    #                , target_charge_cat_num=target_charge_cat_num
-    #                )
+    make_radar_fig(df=df
+                   , figures_folder=figures_folder
+                   , plot_params=plot_params
+                   , max_date=max_date
+                   , min_date=min_date
+                   , charge_types=charge_types
+                   , colors=colors
+                   , grouping=grouping
+                   , values_plot=values_plot
+                   , angles_plot=angles_plot
+                   , target_charge_cat_num=target_charge_cat_num
+                   )
 
-    # make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
-    make_unit_network(df, charge_types=charge_types, figures_folder=figures_folder)
+    make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
+    # make_unit_network(df, charge_types=charge_types, figures_folder=figures_folder)
 
 
 def make_unit_network(df, charge_types, figures_folder, target_charge_type='charge_1_description_category_macro'):
-
     lead_charge_code = 'lead_charge_code'
     lead_charge_code_type = f'{lead_charge_code}_type'
 
-    data = df[['district'
-            , 'unit'
-            , 'beat'
-            , 'arrest_year'
-            , 'arrest_month'
-            , 'arrest_day'
-            , 'arrest_time'
-            , 'charge_1_description'
-            , target_charge_type
-            , lead_charge_code
+    kb = KB()
+    kb.name = 'cpd'
+    data = df[['lead_charge_police_related'
+             , 'beat'
+             , 'unit'
+             , 'arrest_time'
+             , target_charge_type
+             , lead_charge_code
                ]].copy(deep=True)
 
     for charge_type in charge_types:
         if charge_type == 'Felony':
             data[lead_charge_code_type] = np.where(data[lead_charge_code] > 7
-                                              , charge_type
-                                              , "None")
+                                                   , charge_type
+                                                   , "None")
         elif charge_type == 'Misdemeanor':
             data[lead_charge_code_type] = np.where((data[lead_charge_code] > 4) & (data[lead_charge_code] <= 7)
-                                              , charge_type
-                                              , data[lead_charge_code_type])
+                                                   , charge_type
+                                                   , data[lead_charge_code_type])
         elif charge_type == 'Petty or Other':
             data[lead_charge_code_type] = np.where((data[lead_charge_code] > 0) & (data[lead_charge_code] <= 4)
-                                              , charge_type
-                                              , data[lead_charge_code_type])
+                                                   , charge_type
+                                                   , data[lead_charge_code_type])
         elif charge_type == 'Not Specified':
             data[lead_charge_code_type] = np.where((data[lead_charge_code] < 0)
-                                              , 'Not Specified'
-                                              , data[lead_charge_code_type])
+                                                   , 'Not Specified'
+                                                   , data[lead_charge_code_type])
 
-    #TODO analyze where police related is True or False
+    keys = ['unit', 'beat']
 
+    for key in keys:
+
+        fill_val = '000' if key == 'unit' else '0000' if key == 'beat' else 'None'
+        data[key] = data[key].fillna(fill_val).astype(str)
+        key_data = data[key].unique().tolist()
+        key_data.sort()
+        for i in key_data:
+            kb.store(f'isA({i},{key})')
+
+    unit_nodes = data[['unit', 'beat']].drop_duplicates()
+    unit_nodes = list(zip(unit_nodes['unit'], unit_nodes['beat']))
+
+    for (unit, beat) in unit_nodes:
+        kb.store(f'assignedTo({beat}, {unit})')
+
+    #TODO
+
+    # test queries to check kb store
+    # results = list(kb.query(f'isA(Unit, unit)'))
+    # print(results)
+
+    # kb.plot(plot_title='Testing')
+
+    # TODO analyze where police related is True or False
 
 
 def make_unit_stats(df
@@ -116,31 +140,29 @@ def make_unit_stats(df
                     ):
     logging.info('make_unit_stats() Starting Stats Analysis by Unit')
 
-    data = df[['beat', 'unit', 'arrest_time', 'lead_charge_code']].copy(deep=True)
+    data = df[['lead_charge_police_related', 'beat', 'unit', 'arrest_time', 'lead_charge_code']].copy(deep=True)
 
     for charge_type in charge_types:
         if charge_type == 'Felony':
             data[target_charge_type] = np.where(data['lead_charge_code'] > 7
-                                              , charge_type
-                                              , "None")
+                                                , charge_type
+                                                , "None")
         elif charge_type == 'Misdemeanor':
             data[target_charge_type] = np.where((data['lead_charge_code'] > 4) & (data['lead_charge_code'] <= 7)
-                                              , charge_type
-                                              , data[target_charge_type])
+                                                , charge_type
+                                                , data[target_charge_type])
         elif charge_type == 'Petty or Other':
             data[target_charge_type] = np.where((data['lead_charge_code'] > 0) & (data['lead_charge_code'] <= 4)
-                                              , charge_type
-                                              , data[target_charge_type])
+                                                , charge_type
+                                                , data[target_charge_type])
         elif charge_type == 'Not Specified':
             data[target_charge_type] = np.where((data['lead_charge_code'] < 0)
-                                              , 'Not Specified'
-                                              , data[target_charge_type])
+                                                , 'Not Specified'
+                                                , data[target_charge_type])
 
     data = data.groupby(target_charge_type)
 
     for i, group in data:
-
-        plt.figure()
         sns.histplot(data=group
                      , x='arrest_time'
                      , kde=True
@@ -149,10 +171,54 @@ def make_unit_stats(df
                      , legend=False
                      , common_norm=True
                      , element='step'
+                     , lw=.1
+                     , line_kws=dict(linewidth=.5)
+                     , fill=False
+                     , alpha=.2
+
                      )
         plt.title(f'Distribution of arrests by time of day and unit.\nGrouped by {i} Arrests.')
         plt.tight_layout()
         file_name = f'tod_arrests_hist_{i}.png'
+        file_path = os.sep.join([figures_folder, file_name])
+        plt.savefig(file_path)
+        plt.show()
+
+        key = 'unit'
+        fill_val = '000' if key == 'unit' else '0000' if key == 'beat' else 'None'
+
+        group[key] = group[key].fillna(fill_val).astype('str')
+        hue_order = group[key].unique().tolist()
+        hue_order.sort()
+
+        plt.figure()
+
+        sns.set_style()
+
+        g = sns.FacetGrid(group
+                        , col='lead_charge_police_related'
+                        , col_order=[True, False]
+                        , hue=key
+                        , hue_order=hue_order
+                        , height=4.5
+                        , aspect=1
+                        )
+
+        g.map(sns.histplot
+              , 'arrest_time'
+              , kde=True
+              , common_norm=True
+              , stat='density'
+              , fill=False
+              , element='step'
+              , lw=.3
+              , line_kws=dict(linewidth=.5)
+              , alpha=.6
+              )
+
+        g.fig.suptitle(f'Distribution of arrests by time of day and unit.\nGrouped by {i} and Police-Related Arrests.')
+        plt.tight_layout()
+        file_name = f'tod_arrests_hist_{i}_policerelated.png'
         file_path = os.sep.join([figures_folder, file_name])
         plt.savefig(file_path)
         plt.show()
@@ -175,12 +241,14 @@ def make_radar_fig(df
                    , filter_outliers=3
                    , title_base='Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)'
                    ):
+
     logging.info('make_radar_fig() Starting Time of Day Analysis')
     agg_name = f'{agg_col}_{agg_type}'
     zscore_col = f'{agg_name}_zscore'
 
     df = df.groupby(grouping).agg({agg_col: agg_type}).reset_index()
     df = df.rename(columns={agg_col: agg_name})
+    N_records = df[agg_name].sum()
 
     target_charge_type = f'{target_charge_cat_num}_type'
 
@@ -199,7 +267,7 @@ def make_radar_fig(df
         elif plot_param_type == 'Not Specified':
             charge_types = ['Not Specified']
 
-        title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={len(df)}'
+        title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={N_records}'
 
         for charge_type in charge_types:
             if charge_type == 'Felony':
@@ -231,44 +299,82 @@ def make_radar_fig(df
 
         if plot_param_type == 'All':
 
-            ax.fill_between(df[angle_name]
-                            , df[agg_name]
-                            , alpha=.2
-                            , color='cornflowerblue'
-                            )
-
-            legend_entry = ('All', Line2D([0], [0], color="cornflowerblue", lw=4))
-
-            legend_entries.append(legend_entry)
-
-        for charge_type in charge_types:
-            df_plot = df[df[target_charge_type] == charge_type].reset_index(drop=True)
-
-            if filter_outliers is not None:
-                df_plot[zscore_col] = np.abs(stats.zscore(df_plot[agg_name]))
-                df_plot = df_plot[df_plot[zscore_col] <= filter_outliers].reset_index(drop=True)
-
-            if len(charge_types) == 1:
-                ax.fill_between(df_plot[angle_name]
-                                , df_plot[agg_name]
-                                , alpha=.2
-                                , color=colors[charge_type]
-                                )
-
-                legend_entry = ('All', Line2D([0], [0], color=colors[charge_type], lw=4, alpha=.2))
-
-                legend_entries.append(legend_entry)
-                pct_of_total = round((len(df_plot) / len(df)) * 100, 1)
-                title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={pct_of_total}% of Total'
-
-            plt.polar(df_plot[angle_name]
-                      , df_plot[agg_name]
+            plt.polar(df[angle_name]
+                      , df[agg_name]
                       , linewidth=.1
-                      , color=colors[charge_type]
+                      , alpha=0
+                      , color='gray'
                       )
 
-            legend_entry = (charge_type, Line2D([0], [0], color=colors[charge_type], lw=4))
+            police_related = df[df['lead_charge_police_related'] == True].reset_index(drop=True)
+
+            ax.fill_between(police_related[angle_name]
+                            , police_related[agg_name]
+                            , alpha=.2
+                            , color='aqua'
+                            )
+
+            legend_entry = ('Is police-related', Line2D([0], [0], color="aqua", lw=4))
             legend_entries.append(legend_entry)
+
+            police_related = df[df['lead_charge_police_related'] == False].reset_index(drop=True)
+
+            ax.fill_between(police_related[angle_name]
+                            , police_related[agg_name]
+                            , alpha=.5
+                            , color='silver'
+                            )
+
+            legend_entry = ('Not police-related', Line2D([0], [0], color="silver", lw=4))
+            legend_entries.append(legend_entry)
+
+        if plot_param_type != 'All':
+
+            for charge_type in charge_types:
+                df_plot = df[df[target_charge_type] == charge_type].reset_index(drop=True)
+
+                if filter_outliers is not None:
+                    df_plot[zscore_col] = np.abs(stats.zscore(df_plot[agg_name]))
+                    df_plot = df_plot[df_plot[zscore_col] <= filter_outliers].reset_index(drop=True)
+
+                plt.polar(df_plot[angle_name]
+                          , df_plot[agg_name]
+                          , linewidth=.1
+                          , alpha=.2
+                          , color=colors[charge_type]
+                          )
+
+                legend_entry = (charge_type, Line2D([0], [0], color=colors[charge_type], lw=4))
+                legend_entries.append(legend_entry)
+
+                if len(charge_types) == 1:
+
+                    police_related = df_plot[df_plot['lead_charge_police_related'] == False].reset_index(drop=True)
+
+                    ax.fill_between(police_related[angle_name]
+                                    , police_related[agg_name]
+                                    , alpha=.5
+                                    , color='silver'
+                                    )
+
+                    legend_entry = ('Not police-related', Line2D([0], [0], color="silver", lw=4))
+                    legend_entries.append(legend_entry)
+
+                    police_related = df_plot[df_plot['lead_charge_police_related'] == True].reset_index(drop=True)
+
+                    ax.fill_between(police_related[angle_name]
+                                    , police_related[agg_name]
+                                    , alpha=.5
+                                    , color='aqua'
+                                    )
+
+                    legend_entry = ('Is police-related', Line2D([0], [0], color="aqua", lw=4))
+                    legend_entries.append(legend_entry)
+                    n_records = df_plot[agg_name].sum()
+                    pct_of_total = round((n_records / N_records) * 100, 1)
+                    title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={pct_of_total}% of Total'
+                    if filter_outliers is not None:
+                        title = title + ' *Outliers Removed'
 
         legend_symbols = []
         legend_names = []
@@ -282,9 +388,6 @@ def make_radar_fig(df
                    , bbox_to_anchor=(0.1, 1)
                    )
         ax.set_rlabel_position(0)
-
-        if filter_outliers is not None:
-            title = title + ' *Outliers Removed'
 
         plt.title(title)
         plt.xticks(angles_plot, values_plot)
