@@ -1,6 +1,5 @@
 from src.runners.run_dataprep_pipelines import run_dataprep_pipeline
-from src.utilities.make_time_of_day_analysis import time_of_day_analysis
-from src.utilities.make_geospatial_analysis import geospatial_analysis
+from src.runners.run_analysis_pipelines import run_analysis_pipeline
 
 import os
 import pandas as pd
@@ -18,9 +17,5 @@ if __name__ == '__main__':
                                , source_filename=source_filename
                                )
 
-    time_of_day_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
-    # geospatial_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
-
-
-
+    run_analysis_pipeline(df=df, data_folder=data_folder, figures_folder=figures_folder)
 

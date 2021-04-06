@@ -3,20 +3,19 @@ from src.utilities.config_dataprep import make_categorical
 from src.utilities.make_nlp_classifications import make_nlp_classification_model_charge_descriptions, apply_nlp_classification_model_charge_descriptions, apply_nlp_match_police_related
 
 
-def run_charge_classification(data_folder
-                             , models_folder
-                             , filename='arrests_redacted.bz2'
-                             , df=None
-                             , output_file='arrests_redacted_classified.bz2'
-                             , nlp_model=True
-                             , crosswalk='CPD_crosswalk_final.xlsx'
-                             , sheet_name='CPD_crosswalk_final'):
+def stage_charge_classification(data_folder
+                                , models_folder
+                                , filename='arrests_redacted.bz2'
+                                , df=None
+                                , output_file='arrests_redacted_classified.bz2'
+                                , nlp_model=True
+                                , crosswalk='CPD_crosswalk_final.xlsx'
+                                , sheet_name='CPD_crosswalk_final'):
 
-    logging.info('run_charge_classification() Starting charge classification pipeline.')
+    logging.info('stage_charge_classification() Starting charge classification pipeline.')
     # the target data for analysis
     input_file = os.sep.join([data_folder, filename])
     output_file = os.sep.join([data_folder, output_file])
-
 
     if os.path.exists(output_file):
         logging.info(f'Found exiting processed file at {output_file}, returning file from disk.')

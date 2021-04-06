@@ -1,7 +1,7 @@
 from src.utilities.config_dataprep import *
 
-def run_pipeline_from_source(data_folder, filename):
-    logging.info('run_pipeline_from_source() --Starting arrest data pipeline')
+def stage_dataprep(data_folder, filename):
+    logging.info('stage_dataprep() --Starting arrest data pipeline')
     pd.set_option('display.max_columns', None)
 
     input_file = os.sep.join([data_folder, filename])
