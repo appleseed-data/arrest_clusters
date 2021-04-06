@@ -14,8 +14,6 @@ from functools import partial
 
 CPUs = mp.cpu_count()
 
-model_save_path = 'models/arrest_charge_classification'
-
 micro_col = 'micro_category'
 macro_col = 'macro_category'
 police_col = 'police_related'

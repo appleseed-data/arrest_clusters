@@ -1,6 +1,9 @@
 from src.utilities.config_classification import *
 from src.utilities.config_dataprep import make_categorical
-from src.utilities.make_nlp_classifications import make_nlp_classification_model_charge_descriptions, apply_nlp_classification_model_charge_descriptions, apply_nlp_match_police_related
+from src.utilities.make_nlp_classifications import \
+    make_nlp_classification_model_charge_descriptions\
+    , apply_nlp_classification_model_charge_descriptions\
+    , apply_nlp_match_police_related
 
 
 def stage_charge_classification(data_folder
@@ -8,9 +11,11 @@ def stage_charge_classification(data_folder
                                 , filename='arrests_redacted.bz2'
                                 , df=None
                                 , output_file='arrests_redacted_classified.bz2'
-                                , nlp_model=True
+                                , model_name_charge_classification='arrest_charge_classification'
                                 , crosswalk='CPD_crosswalk_final.xlsx'
-                                , sheet_name='CPD_crosswalk_final'):
+                                , sheet_name='CPD_crosswalk_final'
+                                , output_filename='arrest_clusters'
+                                ):
 
     logging.info('stage_charge_classification() Starting charge classification pipeline.')
     # the target data for analysis
@@ -49,22 +54,24 @@ def stage_charge_classification(data_folder
             .pipe(apply_manual_match, criteria=[('CTA - ', ['Nuisance', 'Other'])])
          )
 
-    if nlp_model is False:
-        model = make_nlp_classification_model_charge_descriptions(df, data_folder)
-    else:
-        model = joblib.load(model_save_path)
+    logging.info('Classifying remaining charge description records with NLP models.')
 
-    df = (df.pipe(apply_nlp_classification_model_charge_descriptions, model=model, data_folder=data_folder)
+    df = (df.pipe(apply_nlp_classification_model_charge_descriptions
+                  , data_folder=data_folder
+                  , models_folder=models_folder
+                  , model_name_charge_classification=model_name_charge_classification)
             .pipe(make_categorical, cols=charge_columns_macro)
             .pipe(make_categorical, cols=charge_columns_micro)
             .pipe(apply_nlp_match_police_related, data_folder=data_folder, models_folder=models_folder)
           )
+
     logging.info(f'Writing processed file from data prep pipeline to {output_file}')
     df.to_pickle(output_file)
 
     # write data as zipped csv for convenience and sharint
-    output_csv ='arrest_clusters.csv'
-    output_csv_path = os.sep.join([data_folder, 'arrest_clusters.zip'])
+    output_csv = output_filename + '.csv'
+    output_zip_shell = output_filename + '.zip'
+    output_csv_path = os.sep.join([data_folder, output_zip_shell])
     compression = dict(method='zip', archive_name=output_csv)
     df.to_csv(output_csv_path, index=False, compression=compression)
 

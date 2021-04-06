@@ -23,6 +23,13 @@ charge_order = [
     , 'A', 'B', 'C', 'L'
     , 'P', 'Z', 'U', "None"]
 
+min_col = 'arrest_minute'
+hr_col = 'arrest_hour'
+time_col = 'arrest_time'
+year_col = 'arrest_year'
+month_col = 'arrest_month'
+day_col = 'arrest_day'
+
 
 def prep_districts(df, target_col='district'):
     logging.info('prep_districts() Converting district data to string.')

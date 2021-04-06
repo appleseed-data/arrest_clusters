@@ -18,46 +18,65 @@ text_pipeline = [pp.lowercase
                      ]
 
 
-def make_nlp_classification_model_charge_descriptions(data_folder, df=None, filename='arrests_redacted.bz2'):
+def make_nlp_classification_model_charge_descriptions(data_folder
+                                                      , models_folder
+                                                      , model_name_charge_classification
+                                                      , df=None
+                                                      , filename='arrests_redacted.bz2'):
 
-    if df is None:
-        data_file = os.sep.join([data_folder, filename])
-        logging.info(f'Starting NLP Pipeline from {data_file}')
-        df = pd.read_pickle(data_file)
+    model_path_charge_classification = os.sep.join([models_folder, model_name_charge_classification])
 
-    known_classifications = df[['charge_1_description', 'charge_1_description_category_micro']].copy()
-    known_classifications = known_classifications.dropna()
-    known_classifications = known_classifications.reset_index(drop=True)
-    known_classifications = known_classifications.rename(columns={'charge_1_description':'description_original'
-                                                                  ,'charge_1_description_category_micro':'category'})
+    if os.path.exists(model_path_charge_classification):
+        logging.info(f'Found existing model for charge description classification, loading it from {model_path_charge_classification}')
+        model = joblib.load(model_path_charge_classification)
+        return model
+    else:
+        logging.info(f'Did not find NLP model for charge description classification at {model_path_charge_classification}, starting NLP model training pipeline.')
+        if df is None:
+            data_file = os.sep.join([data_folder, filename])
+            logging.info(f'Starting NLP Pipeline from {data_file}')
+            df = pd.read_pickle(data_file)
 
-    known_classifications['description_cleaned'] = hero.clean(known_classifications['description_original'], pipeline=text_pipeline)
+        known_classifications = df[['charge_1_description', 'charge_1_description_category_micro']].copy()
+        known_classifications = known_classifications.dropna()
+        known_classifications = known_classifications.reset_index(drop=True)
+        known_classifications = known_classifications.rename(columns={'charge_1_description':'description_original'
+                                                                      ,'charge_1_description_category_micro':'category'})
 
-    x_train, x_test, y_train, y_test = tts(known_classifications[['description_cleaned']], known_classifications['category'], test_size=0.3, shuffle=True)
+        known_classifications['description_cleaned'] = hero.clean(known_classifications['description_original'], pipeline=text_pipeline)
 
-    nlp_ppl = Pipeline([
-                        ('cv', CountVectorizer()),
-                        ('clf', ComplementNB())
-                        ])
-    logging.info('Fit Train Predict Model')
-    model = nlp_ppl.fit(x_train['description_cleaned'], y_train)
-    y_pred = model.predict(x_test['description_cleaned'])
-    y_true = y_test.tolist()
-    acc = accuracy_score(y_true, y_pred)
-    logging.info(f'Accuracy Score is {acc}')
+        x_train, x_test, y_train, y_test = tts(known_classifications[['description_cleaned']], known_classifications['category'], test_size=0.3, shuffle=True)
 
-    joblib.dump(model, model_save_path)
-    logging.info(f'Saving Model to {model_save_path}')
+        nlp_ppl = Pipeline([
+                            ('cv', CountVectorizer()),
+                            ('clf', ComplementNB())
+                            ])
+        logging.info('Fit Train Predict Model')
+        model = nlp_ppl.fit(x_train['description_cleaned'], y_train)
+        y_pred = model.predict(x_test['description_cleaned'])
+        y_true = y_test.tolist()
+        acc = accuracy_score(y_true, y_pred)
+        logging.info(f'Accuracy Score is {acc}')
 
-    return model
+        joblib.dump(model, model_path_charge_classification)
+        logging.info(f'Saving Model to {model_path_charge_classification}')
+
+        return model
 
 
 def apply_nlp_classification_model_charge_descriptions(df
-                                                       , model
                                                        , data_folder
+                                                       , models_folder
+                                                       , model_name_charge_classification
                                                        , filename='CPD_crosswalk_final.xlsx'
                                                        , sheet_name='CPD_crosswalk_final'
+                                                       , enable_mp=True
                                                        ):
+
+    model = make_nlp_classification_model_charge_descriptions(df=df
+                                                              , data_folder=data_folder
+                                                              , model_name_charge_classification=model_name_charge_classification
+                                                              , models_folder=models_folder)
     # the charge description maps
     data_file = os.sep.join([data_folder, filename])
     crosswalk, micro_charge_map, macro_charge_map, police_related_map = prep_crosswalk(filename=data_file, sheet_name=sheet_name)
@@ -70,19 +89,20 @@ def apply_nlp_classification_model_charge_descriptions(df
     macro_charge_map = macro_charge_map.set_index(micro_col)
     macro_charge_map = macro_charge_map.to_dict()[macro_col]
 
-    # run nlp match in parallel
-    pool = mp.Pool(CPUs)
-    pbar = tqdm(target_columns, desc='Running DataFrame NLP match with multiprocessing')
-    run_nlp_match_ = partial(run_nlp_match, df=df, model=model)
-    results = list(pool.imap(run_nlp_match_, pbar))
-    pool.close()
-    pool.join()
-
-    # uncomment next series to run nlp match in regular style
-    # results = []
-    # for target_column in target_columns:
-    #     result = run_nlp_match(df, target_column, model)
-    #     results.append(result)
+    if enable_mp:
+        # run nlp match in parallel
+        pool = mp.Pool(CPUs)
+        pbar = tqdm(target_columns, desc='Running DataFrame NLP match with multiprocessing')
+        run_nlp_match_ = partial(run_nlp_match, df=df, model=model)
+        results = list(pool.imap(run_nlp_match_, pbar))
+        pool.close()
+        pool.join()
+    else:
+        # run nlp match in series
+        results = []
+        for target_column in target_columns:
+            result = run_nlp_match(df, target_column, model)
+            results.append(result)
 
     # bring results back together
     for col_name, col_series in results:
@@ -153,8 +173,7 @@ def apply_nlp_match_police_related(df
         known_classifications = known_classifications.reset_index(drop=True)
         known_classifications = known_classifications.rename(columns={known_description: 'description_original', known_mapping: 'category'})
 
-        known_classifications['category'] = known_classifications['category'].map({False:0
-                                                                                   ,True:1})
+        known_classifications['category'] = known_classifications['category'].map({False: 0, True: 1})
 
         known_classifications['description_cleaned'] = hero.clean(known_classifications['description_original'], pipeline=text_pipeline)
 
