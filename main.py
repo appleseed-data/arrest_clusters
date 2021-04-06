@@ -11,34 +11,15 @@ if __name__ == '__main__':
     figures_folder = os.sep.join([os.environ['PWD'], 'figures'])
     models_folder = os.sep.join([os.environ['PWD'], 'models'])
 
-    # set dataprep to false to read prepared data for analysis
-    # set dataprep to true to run prediction and fill charge categories
-    run_dataprep = False
-    # default read from source to false
-    read_from_source = False
-    # if none, source_filename defaults to "Arrests.bz2"
     source_filename = "Arrests_-_Authorized-Access-Only_Version.bz2"
 
-    if run_dataprep:
-        # set read_from_source to true if have access to source data
-        # default to false runs data prep from redacted arrest data
-        df = run_dataprep_pipeline(read_from_source=read_from_source
-                                   , data_folder=data_folder
-                                   , models_folder=models_folder
-                                   , source_filename=source_filename
-                                   )
-    else:
-        # set full path to target data
-        filename = 'arrests_redacted_classified.bz2'
-        data_file = os.sep.join([data_folder, filename])
-        df = pd.read_pickle(data_file)
+    df = run_dataprep_pipeline(data_folder=data_folder
+                               , models_folder=models_folder
+                               , source_filename=source_filename
+                               )
 
-        filename ='arrest_clusters.csv'
-        file_out = os.sep.join([data_folder, 'arrest_clusters.zip'])
-        compression = dict(method='zip', archive_name=filename)
-        df.to_csv(file_out, index=False, compression=compression)
-        time_of_day_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
-        # geospatial_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
+    time_of_day_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
+    # geospatial_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
 
 
 
