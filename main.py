@@ -1,5 +1,6 @@
 from src.runners.run_dataprep_pipelines import run_dataprep_pipeline
 from src.utilities.make_time_of_day_analysis import time_of_day_analysis
+from src.utilities.make_geospatial_analysis import geospatial_analysis
 
 import os
 import pandas as pd
@@ -37,6 +38,7 @@ if __name__ == '__main__':
         compression = dict(method='zip', archive_name=filename)
         df.to_csv(file_out, index=False, compression=compression)
         time_of_day_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
+        # geospatial_analysis(df, data_folder=data_folder, figures_folder=figures_folder)
 
 
 
