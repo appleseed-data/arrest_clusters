@@ -1,21 +1,13 @@
 from src.utilities.config_classification import *
+from src.utilities.config import Config
 import texthero as hero
-from texthero import preprocessing as pp
 from sklearn.model_selection import train_test_split as tts
-from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.metrics import accuracy_score
-
-
-text_pipeline = [pp.lowercase
-                   , pp.remove_diacritics
-                   , pp.remove_digits
-                   , pp.remove_stopwords
-                   , pp.remove_punctuation
-                   , pp.remove_whitespace
-                   , pp.stem
-                     ]
+import joblib
+import os
+import multiprocessing as mp
+from tqdm import tqdm
+from functools import partial
 
 
 def make_nlp_classification_model_charge_descriptions(data_folder
@@ -27,39 +19,36 @@ def make_nlp_classification_model_charge_descriptions(data_folder
     model_path_charge_classification = os.sep.join([models_folder, model_name_charge_classification])
 
     if os.path.exists(model_path_charge_classification):
-        logging.info(f'Found existing model for charge description classification, loading it from {model_path_charge_classification}')
+        Config.my_logger.info(f'Found existing model for charge description classification, loading it from {model_path_charge_classification}')
         model = joblib.load(model_path_charge_classification)
         return model
     else:
-        logging.info(f'Did not find NLP model for charge description classification at {model_path_charge_classification}, starting NLP model training pipeline.')
+        Config.my_logger.info(f'Did not find NLP model for charge description classification at {model_path_charge_classification}, starting NLP model training pipeline.')
         if df is None:
             data_file = os.sep.join([data_folder, filename])
-            logging.info(f'Starting NLP Pipeline from {data_file}')
+            Config.my_logger.info(f'Starting NLP Pipeline from {data_file}')
             df = pd.read_pickle(data_file)
 
         known_classifications = df[['charge_1_description', 'charge_1_description_category_micro']].copy()
         known_classifications = known_classifications.dropna()
         known_classifications = known_classifications.reset_index(drop=True)
-        known_classifications = known_classifications.rename(columns={'charge_1_description':'description_original'
-                                                                      ,'charge_1_description_category_micro':'category'})
+        known_classifications = known_classifications.rename(columns={'charge_1_description': 'description_original'
+                                                                      ,'charge_1_description_category_micro': 'category'})
 
-        known_classifications['description_cleaned'] = hero.clean(known_classifications['description_original'], pipeline=text_pipeline)
+        known_classifications['description_cleaned'] = hero.clean(known_classifications['description_original'], pipeline=Config.text_pipeline)
 
         x_train, x_test, y_train, y_test = tts(known_classifications[['description_cleaned']], known_classifications['category'], test_size=0.3, shuffle=True)
 
-        nlp_ppl = Pipeline([
-                            ('cv', CountVectorizer()),
-                            ('clf', ComplementNB())
-                            ])
-        logging.info('Fit Train Predict Model')
-        model = nlp_ppl.fit(x_train['description_cleaned'], y_train)
+        Config.my_logger.info('Fit Train Predict Model')
+
+        model = Config.nlp_ppl.fit(x_train['description_cleaned'], y_train)
         y_pred = model.predict(x_test['description_cleaned'])
         y_true = y_test.tolist()
         acc = accuracy_score(y_true, y_pred)
-        logging.info(f'Accuracy Score is {acc}')
+        Config.my_logger.info(f'Accuracy Score is {acc}')
 
         joblib.dump(model, model_path_charge_classification)
-        logging.info(f'Saving Model to {model_path_charge_classification}')
+        Config.my_logger.info(f'Saving Model to {model_path_charge_classification}')
 
         return model
 
@@ -81,17 +70,17 @@ def apply_nlp_classification_model_charge_descriptions(df
     data_file = os.sep.join([data_folder, filename])
     crosswalk, micro_charge_map, macro_charge_map, police_related_map = prep_crosswalk(filename=data_file, sheet_name=sheet_name)
 
-    logging.info('Applying NLP Model.')
+    Config.my_logger.info('Applying NLP Model.')
     # create a nested list to iterate through
-    target_columns = list(zip(charge_columns, tuple(zip(charge_columns_micro, charge_columns_macro))))
+    target_columns = list(zip(Config.charge_columns, tuple(zip(Config.charge_columns_micro, Config.charge_columns_macro))))
 
     # return a dictionary version of the cpd crosswalk
-    macro_charge_map = macro_charge_map.set_index(micro_col)
-    macro_charge_map = macro_charge_map.to_dict()[macro_col]
+    macro_charge_map = macro_charge_map.set_index(Config.micro_col)
+    macro_charge_map = macro_charge_map.to_dict()[Config.macro_col]
 
     if enable_mp:
         # run nlp match in parallel
-        pool = mp.Pool(CPUs)
+        pool = mp.Pool(Config.CPUs)
         pbar = tqdm(target_columns, desc='Running DataFrame NLP match with multiprocessing')
         run_nlp_match_ = partial(run_nlp_match, df=df, model=model)
         results = list(pool.imap(run_nlp_match_, pbar))
@@ -108,32 +97,34 @@ def apply_nlp_classification_model_charge_descriptions(df
     for col_name, col_series in results:
         df[col_name] = col_series
 
-    for col in col_nums:
-        start_count = df[f'charge_{col}_description_category_macro'].isna().sum()
-        logging.info(f'Mapping Macro Categories for charges -{col}- for {start_count}')
-        df[f'charge_{col}_description_category_macro'] = df[f'charge_{col}_description_category_micro'].map(macro_charge_map)
-        end_count = df[f'charge_{col}_description_category_macro'].isna().sum()
-        logging.info(f'Remaining NA count {end_count}')
+    n_cols = len(Config.charge_columns)
+    for idx in range(n_cols):
+        col = Config.charge_columns_macro[idx]
+        start_count = df[col].isna().sum()
+        Config.my_logger.info(f'Mapping Macro Categories for charges -{col}- for {start_count}')
+        df[col] = df[Config.charge_columns_micro[idx]].map(macro_charge_map)
+        end_count = df[col].isna().sum()
+        Config.my_logger.info(f'Remaining NA count {end_count}')
 
     return df
 
 
 def run_nlp_match(target_column, df, model):
     charge_description, categories = target_column
-    logging.info(f'- Starting NLP match for {charge_description}')
+    Config.my_logger.info(f'- Starting NLP match for {charge_description}')
 
     results = []
 
-    logging.info(f'- Starting NLP match for {charge_description}')
+    Config.my_logger.info(f'- Starting NLP match for {charge_description}')
 
     for category in categories:
         if 'micro' in category:
             # do mapping where there is a description but no category mapping
             df['flag'] = ~df[charge_description].isna() & df[category].isna()
             start_counts = df['flag'].value_counts()
-            logging.info(f'-- In {category}, there are {start_counts[True]} to classify.')
+            Config.my_logger.info(f'-- In {category}, there are {start_counts[True]} to classify.')
 
-            temp = hero.clean(df[df['flag'] == True][charge_description].copy(), pipeline=text_pipeline)
+            temp = hero.clean(df[df['flag'] == True][charge_description].copy(), pipeline=Config.text_pipeline)
             idx = temp.index.values.tolist()
             predictions = model.predict(temp)
 
@@ -143,9 +134,9 @@ def run_nlp_match(target_column, df, model):
             end_counts = df['flag'].value_counts()
 
             try:
-                logging.info(f'The are {end_counts[True]} charges left to classify')
+                Config.my_logger.info(f'The are {end_counts[True]} charges left to classify')
             except:
-                logging.info(
+                Config.my_logger.info(
                     f'Classification Status 100%. Started with {start_counts[True]} to map. Ended with {end_counts[False]} mapped. ')
 
             result = tuple((category, df[category]))
@@ -167,7 +158,7 @@ def apply_nlp_match_police_related(df
     model_path = os.sep.join([models_folder, model_file])
 
     if not os.path.exists(model_path):
-        logging.info('apply_nlp_match_police_related() NLP model not found, learning a model for classification.')
+        Config.my_logger.info('apply_nlp_match_police_related() NLP model not found, learning a model for classification.')
         known_classifications = df[[known_description, known_mapping]].copy(deep=True)
         known_classifications = known_classifications.dropna()
         known_classifications = known_classifications.reset_index(drop=True)
@@ -175,41 +166,37 @@ def apply_nlp_match_police_related(df
 
         known_classifications['category'] = known_classifications['category'].map({False: 0, True: 1})
 
-        known_classifications['description_cleaned'] = hero.clean(known_classifications['description_original'], pipeline=text_pipeline)
+        known_classifications['description_cleaned'] = hero.clean(known_classifications['description_original'], pipeline=Config.text_pipeline)
 
         x_train, x_test, y_train, y_test = tts(known_classifications[['description_cleaned']],
                                                known_classifications['category'], test_size=0.3, shuffle=True)
 
-        nlp_ppl = Pipeline([
-            ('cv', CountVectorizer()),
-            ('clf', ComplementNB())
-        ])
+        Config.my_logger.info('Fit Train Predict Model')
 
-        logging.info('Fit Train Predict Model')
-        model = nlp_ppl.fit(x_train['description_cleaned'], y_train)
+        model = Config.nlp_ppl.fit(x_train['description_cleaned'], y_train)
         y_pred = model.predict(x_test['description_cleaned'])
         y_true = y_test.tolist()
         acc = accuracy_score(y_true, y_pred)
-        logging.info(f'Accuracy Score is {acc}')
+        Config.my_logger.info(f'Accuracy Score is {acc}')
 
         joblib.dump(model, model_path)
-        logging.info(f'Saving Police Related Classification Model to {model_path}')
+        Config.my_logger.info(f'Saving Police Related Classification Model to {model_path}')
 
     else:
-        logging.info(f'Found arrest classification model for police related flag at {model_path}')
+        Config.my_logger.info(f'Found arrest classification model for police related flag at {model_path}')
         model = joblib.load(model_path)
 
-    logging.info('Applying NLP Model.')
+    Config.my_logger.info('Applying NLP Model.')
     # create a nested list to iterate through
-    target_columns = list(zip(charge_columns, police_related_flags))
+    target_columns = list(zip(Config.charge_columns, Config.police_related_flags))
     # run nlp match
     for charge_description, category in target_columns:
 
         df['flag'] = ~df[charge_description].isna() & df[category].isna()
         start_counts = df['flag'].value_counts()
-        logging.info(f'-- In {category}, there are {start_counts[True]} to classify.')
+        Config.my_logger.info(f'-- In {category}, there are {start_counts[True]} to classify.')
 
-        temp = hero.clean(df[df['flag'] == True][charge_description].copy(), pipeline=text_pipeline)
+        temp = hero.clean(df[df['flag'] == True][charge_description].copy(), pipeline=Config.text_pipeline)
         idx = temp.index.values.tolist()
         predictions = model.predict(temp)
         predictions = [False if i == 0 else True for i in predictions]
@@ -220,9 +207,9 @@ def apply_nlp_match_police_related(df
         end_counts = df['flag'].value_counts()
 
         try:
-            logging.info(f'The are {end_counts[True]} charges left to classify')
+            Config.my_logger.info(f'The are {end_counts[True]} charges left to classify')
         except:
-            logging.info(
+            Config.my_logger.info(
                 f'Classification Status 100%.')
 
     df = df.drop(columns=['flag'])

@@ -1,15 +1,8 @@
+from src.utilities.config import Config
 from src.utilities.make_analysis_timeofday import make_radar_fig, make_unit_stats
 from src.utilities.make_geospatial_analysis import geospatial_analysis
-import logging
 
 from math import pi
-
-min_col = 'arrest_minute'
-hr_col = 'arrest_hour'
-time_col = 'arrest_time'
-year_col = 'arrest_year'
-month_col = 'arrest_month'
-day_col = 'arrest_day'
 
 def stage_analysis_timeofday(df
                          , data_folder
@@ -18,12 +11,12 @@ def stage_analysis_timeofday(df
                          , target_charge_name='lead_charge'
                          , target_charge_cat_num='lead_charge_code'
                          ):
-    logging.info('Running time_of_day_analysis()')
+    Config.my_logger.info('Running time_of_day_analysis()')
     # return min and max dates
     min_date = min(df['arrest_date']).year
     max_date = max(df['arrest_date']).year
     # return hours of the day as categories for plotting (24 hr clock)
-    plot_categories = df[hr_col].astype('str').unique().tolist()
+    plot_categories = df[Config.hr_col].astype('str').unique().tolist()
     plot_categories.sort()
     # return number of categories for plotting
     n_plot_categories = len(plot_categories)
@@ -37,7 +30,7 @@ def stage_analysis_timeofday(df
     # extract flag for whether lead charge is police related or not
     df['lead_charge_police_related'] = df['charge_1_description_police_related']
 
-    grouping = ['lead_charge_police_related', target_charge_cat_num, year_col, month_col, day_col, hr_col]
+    grouping = ['lead_charge_police_related', target_charge_cat_num, Config.year_col, Config.month_col, Config.day_col, Config.hr_col]
 
     charge_types = ['Felony', 'Misdemeanor', 'Petty or Other', 'Not Specified']
     colors = ['gray', 'blue', 'darkkhaki', 'red']

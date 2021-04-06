@@ -2,7 +2,7 @@ from src.runners.run_dataprep_pipelines import run_dataprep_pipeline
 from src.runners.run_analysis_pipelines import run_analysis_pipeline
 
 import os
-import pandas as pd
+
 
 if __name__ == '__main__':
     # set path to data folder

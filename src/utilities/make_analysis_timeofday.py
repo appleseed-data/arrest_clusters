@@ -1,6 +1,6 @@
 # https://stackoverflow.com/questions/59390562/how-to-use-time-as-x-axis-for-a-scatterplot-with-seaborn
 
-import pandas as pd
+import os
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
@@ -8,20 +8,12 @@ import matplotlib.dates as mdates
 import datetime
 
 import seaborn as sns
-from src.utilities.config_general import *
-from src.utilities.config_dataprep import prep_time_of_day, prep_beats
+from src.utilities.config import Config
 from scipy import stats
 
 from zincbase import KB
 
 plt.style.use('seaborn')
-
-min_col = 'arrest_minute'
-hr_col = 'arrest_hour'
-time_col = 'arrest_time'
-year_col = 'arrest_year'
-month_col = 'arrest_month'
-day_col = 'arrest_day'
 
 
 def make_unit_network(df, charge_types, figures_folder, target_charge_type='charge_1_description_category_macro'):
@@ -90,7 +82,7 @@ def make_unit_stats(df
                     , target_charge_type='lead_charge_code_type'
                     , filter_outliers=3
                     ):
-    logging.info('make_unit_stats() Starting Stats Analysis by Unit')
+    Config.my_logger.info('make_unit_stats() Starting Stats Analysis by Unit')
 
     data = df[['lead_charge_police_related', 'beat', 'unit', 'arrest_time', 'lead_charge_code']].copy(deep=True)
 
@@ -194,7 +186,7 @@ def make_radar_fig(df
                    , title_base='Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)'
                    ):
 
-    logging.info('make_radar_fig() Starting Time of Day Analysis')
+    Config.my_logger.info('make_radar_fig() Starting Time of Day Analysis')
     agg_name = f'{agg_col}_{agg_type}'
     zscore_col = f'{agg_name}_zscore'
 
@@ -243,7 +235,7 @@ def make_radar_fig(df
 
         map_values2angles = dict(zip(values_plot, angles_plot))
 
-        df[angle_name] = df[hr_col].map(map_values2angles)
+        df[angle_name] = df[Config.hr_col].map(map_values2angles)
 
         fig = plt.figure(figsize=(8, 8))
         ax = plt.subplot(polar="True")

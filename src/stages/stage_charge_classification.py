@@ -1,9 +1,8 @@
 from src.utilities.config_classification import *
 from src.utilities.config_dataprep import make_categorical
-from src.utilities.make_nlp_classifications import \
-    make_nlp_classification_model_charge_descriptions\
-    , apply_nlp_classification_model_charge_descriptions\
-    , apply_nlp_match_police_related
+from src.utilities.make_nlp_classifications import apply_nlp_classification_model_charge_descriptions, apply_nlp_match_police_related
+
+import os
 
 
 def stage_charge_classification(data_folder
@@ -17,26 +16,26 @@ def stage_charge_classification(data_folder
                                 , output_filename='arrest_clusters'
                                 ):
 
-    logging.info('stage_charge_classification() Starting charge classification pipeline.')
+    Config.my_logger.info('stage_charge_classification() Starting charge classification pipeline.')
     # the target data for analysis
     input_file = os.sep.join([data_folder, filename])
     output_file = os.sep.join([data_folder, output_file])
 
     if os.path.exists(output_file):
-        logging.info(f'Found exiting processed file at {output_file}, returning file from disk.')
-        logging.info(f'If you want to run the classification pipeline, delete or rename the input file located at {input_file}')
+        Config.my_logger.info(f'Found exiting processed file at {output_file}, returning file from disk.')
+        Config.my_logger.info(f'If you want to run the classification pipeline, delete or rename the input file located at {input_file}')
         df = pd.read_pickle(output_file)
         return df
 
     elif df is not None:
-        logging.info('Continuing pipeline with dataframe.')
+        Config.my_logger.info('Continuing pipeline with dataframe.')
         df = df
 
     elif os.path.exists(input_file):
-        logging.info(f'Did not find existing output file or dataframe from pipeline, reading from input file instead from disk at {input_file}')
+        Config.my_logger.info(f'Did not find existing output file or dataframe from pipeline, reading from input file instead from disk at {input_file}')
         df = pd.read_pickle(input_file)
 
-    logging.info('Preparing CPD crosswalk for macro and micro classifications.')
+    Config.my_logger.info('Preparing CPD crosswalk for macro and micro classifications.')
     # the charge description maps
     crosswalk_file = os.sep.join([data_folder, crosswalk])
     crosswalk, micro_charge_map, macro_charge_map, police_related_map = prep_crosswalk(filename=crosswalk_file, sheet_name=sheet_name)
@@ -54,18 +53,18 @@ def stage_charge_classification(data_folder
             .pipe(apply_manual_match, criteria=[('CTA - ', ['Nuisance', 'Other'])])
          )
 
-    logging.info('Classifying remaining charge description records with NLP models.')
+    Config.my_logger.info('Classifying remaining charge description records with NLP models.')
 
     df = (df.pipe(apply_nlp_classification_model_charge_descriptions
                   , data_folder=data_folder
                   , models_folder=models_folder
                   , model_name_charge_classification=model_name_charge_classification)
-            .pipe(make_categorical, cols=charge_columns_macro)
-            .pipe(make_categorical, cols=charge_columns_micro)
+            .pipe(make_categorical, cols=Config.charge_columns_macro)
+            .pipe(make_categorical, cols=Config.charge_columns_micro)
             .pipe(apply_nlp_match_police_related, data_folder=data_folder, models_folder=models_folder)
           )
 
-    logging.info(f'Writing processed file from data prep pipeline to {output_file}')
+    Config.my_logger.info(f'Writing processed file from data prep pipeline to {output_file}')
     df.to_pickle(output_file)
 
     # write data as zipped csv for convenience and sharint
