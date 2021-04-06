@@ -1,7 +1,6 @@
 name: arrest_clusters
 channels:
   - anaconda
-  - conda-forge
   - defaults
 dependencies:
   - ca-certificates=2020.10.14=0
@@ -36,6 +35,7 @@ dependencies:
     - colorful==0.5.4
     - cycler==0.10.0
     - cymem==2.0.5
+    - decorator==4.4.2
     - en-core-web-sm==3.0.0
     - et-xmlfile==1.0.1
     - filelock==3.0.12
@@ -58,6 +58,7 @@ dependencies:
     - msgpack==1.0.2
     - multidict==5.1.0
     - murmurhash==1.0.5
+    - networkx==2.5.1
     - nltk==3.5
     - numpy==1.19.5
     - nvidia-ml-py3==7.352.0
@@ -93,6 +94,7 @@ dependencies:
     - scipy==1.6.1
     - seaborn==0.11.1
     - six==1.15.0
+    - sklearn==0.0
     - smart-open==3.0.0
     - spacy==3.0.5
     - spacy-legacy==3.0.1
@@ -101,6 +103,8 @@ dependencies:
     - texthero==1.0.9
     - thinc==8.0.2
     - threadpoolctl==2.1.0
+    - torch==1.8.1
+    - torchvision==0.9.1
     - tqdm==4.59.0
     - typer==0.3.2
     - typing-extensions==3.7.4.3
@@ -109,4 +113,5 @@ dependencies:
     - wasabi==0.8.2
     - wordcloud==1.8.1
     - yarl==1.6.3
-prefix: /opt/anaconda3/envs/arrest_clusters
+    - zincbase==0.10.1
+prefix: /Users/cheese/opt/anaconda3/envs/arrest_clusters
