@@ -39,7 +39,7 @@ def stage_dataprep(data_folder, input_file, output_file):
 
         Config.my_logger.info('Write prepared and redacted dataframe to pickle')
 
-        df.to_pickle(output_file_path)
+        df.to_pickle(output_file_path, protocol=2)
         Config.my_logger.info(f'--Completed arrest data pipeline. Write dataframe to {output_file_path}')
         Config.my_logger.info('To run analysis, re-run and set data_prep read from source to False')
 

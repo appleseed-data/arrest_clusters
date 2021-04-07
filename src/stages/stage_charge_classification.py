@@ -65,7 +65,7 @@ def stage_charge_classification(data_folder
           )
 
     Config.my_logger.info(f'Writing processed file from data prep pipeline to {output_file}')
-    df.to_pickle(output_file)
+    df.to_pickle(output_file, protocol=2)
 
     # write data as zipped csv for convenience and sharint
     output_csv = output_filename + '.csv'
