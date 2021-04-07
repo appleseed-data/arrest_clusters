@@ -42,6 +42,27 @@ python main.py
 
 ## Data
 
+The primary output of this project is the classification of arrest records into a cleaned dataset that is ready for analysis. Currently the target output file is saved as a compressed Pandas Pickle file. The compression saves space and the pickle saves dtypes of each column such as categorical types and datetime types.
+
+URL to Output file: 
+
+How to Get and Read Compressed Pandas Pickle from a Git Repo
+```python3
+from io import BytesIO
+import requests
+import pandas as pd
+import joblib
+
+url = "https://github.com/appleseed-data/arrest_clusters/blob/main/data/arrests_redacted_classified.bz2?raw=true"
+
+data_stream = BytesIO(requests.get(url).content)
+data_file = joblib.load(data_stream)
+df = pd.read_pickle(data_file)
+
+df.head()
+```
+
+
 ### Data Prep
 
 A brief description of the data pipeline to process source arrest data. 
