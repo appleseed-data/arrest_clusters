@@ -11,7 +11,7 @@ def stage_analysis_timeofday(df
                          , target_charge_name='lead_charge'
                          , target_charge_cat_num='lead_charge_code'
                          ):
-    Config.my_logger.info('Running time_of_day_analysis()')
+    Config.my_logger.info('Running stage_analysis_timeofday()')
     # return min and max dates
     min_date = min(df['arrest_date']).year
     max_date = max(df['arrest_date']).year

@@ -1,4 +1,4 @@
-from src.utilities.config_classification import *
+from src.utilities.make_classification import *
 from src.utilities.config import Config
 import texthero as hero
 from sklearn.model_selection import train_test_split as tts

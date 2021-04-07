@@ -1,5 +1,5 @@
-from src.utilities.config_classification import *
-from src.utilities.config_dataprep import make_categorical
+from src.utilities.make_classification import *
+from src.utilities.make_dataprep import make_categorical
 from src.utilities.make_nlp_classifications import apply_nlp_classification_model_charge_descriptions, apply_nlp_match_police_related
 
 import os
@@ -7,7 +7,7 @@ import os
 
 def stage_charge_classification(data_folder
                                 , models_folder
-                                , filename='arrests_redacted.bz2'
+                                , input_file='arrests_redacted.bz2'
                                 , df=None
                                 , output_file='arrests_redacted_classified.bz2'
                                 , model_name_charge_classification='arrest_charge_classification'
@@ -18,12 +18,12 @@ def stage_charge_classification(data_folder
 
     Config.my_logger.info('stage_charge_classification() Starting charge classification pipeline.')
     # the target data for analysis
-    input_file = os.sep.join([data_folder, filename])
+    input_file_path = os.sep.join([data_folder, input_file])
     output_file = os.sep.join([data_folder, output_file])
 
     if os.path.exists(output_file):
         Config.my_logger.info(f'Found exiting processed file at {output_file}, returning file from disk.')
-        Config.my_logger.info(f'If you want to run the classification pipeline, delete or rename the input file located at {input_file}')
+        Config.my_logger.info(f'If you want to run the classification pipeline, delete or rename the input file located at {input_file_path}')
         df = pd.read_pickle(output_file)
         return df
 
@@ -31,9 +31,9 @@ def stage_charge_classification(data_folder
         Config.my_logger.info('Continuing pipeline with dataframe.')
         df = df
 
-    elif os.path.exists(input_file):
-        Config.my_logger.info(f'Did not find existing output file or dataframe from pipeline, reading from input file instead from disk at {input_file}')
-        df = pd.read_pickle(input_file)
+    elif os.path.exists(input_file_path):
+        Config.my_logger.info(f'Did not find existing output file or dataframe from pipeline, reading from input file instead from disk at {input_file_path}')
+        df = pd.read_pickle(input_file_path)
 
     Config.my_logger.info('Preparing CPD crosswalk for macro and micro classifications.')
     # the charge description maps

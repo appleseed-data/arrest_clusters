@@ -7,9 +7,23 @@ import time
 import os
 import logging
 
-class Config:
 
+class Config:
+    """
+    Config is a class of global variables.
+    """
     CPUs = mp.cpu_count()
+
+    redact_columns = ['first_name'
+                    , 'last_name'
+                    , 'middle_name'
+                    , 'cb_no'
+                    , 'case_number'
+                    , 'street_no'
+                    , 'street_dir'
+                    , 'street_name'
+                      ]
+    drop_columns = ['charges_statute', 'charges_description', 'charges_type', 'charges_class', 'charges_fbi_code']
 
     micro_col = 'micro_category'
     macro_col = 'macro_category'
