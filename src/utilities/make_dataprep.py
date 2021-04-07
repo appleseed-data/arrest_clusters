@@ -134,33 +134,77 @@ def make_titlecase(df, cols):
     return df
 
 
-def reduce_precision(df, charge_cols=None, enable_mp=True):
+def reduce_precision(df
+                     , enable_mp=True
+                     , mp_processors=None
+                     , date_strings=None
+                     , exclude_cols=None
+                     , special_mappings=None
+                     , bool_types=None
+                     , categorical_ratio=.1
+                     , categorical_threshold=20
+                     , final_default_dtype='string'
+                     ):
     """
-    :param df: attempts to auto-optimize a dataframe by applying least precision to each col type
-    :return: the same dataframe but with different col dtypes, if applicable
+    :params df: a pandas dataframe to optimize
+    :params enable_mp: If None, default to True. Set to false to run in series.
+    :params date_strings: If None, default to a list of strings that indicate date columns -> ['_date', 'date_']
+    :params exclude_cols: Default to None. A list of strings that indicate columns to exclude
+    :params special_mappings: Default to None.
+            A dictionary where each key is the desired dtype and the value are a list of strings that indicate columns
+            to make that dtype.
+    :params bool_types: If None, default to a list of values that indicate there is a boolean dtype such
+            as True False, etc. -> [True, False, 'true', 'True', 'False', 'false']
+    :params categorical_ratio: If None, default to .1 (10%). Evaluates the ratio of unique values in the column
+            , if less than 10%, then, categorical.
+    :params categorical_threshold: If None, default to 20. If the number of unique values is less than 20
+            , make it a categorical column.
+    :params final_default_dtype: If None, default to "string" dtype.
     """
+
     Config.my_logger.info(f'Starting DataFrame Optimization. Starting with {mem_usage(df)} memory.')
     cols_to_convert = []
-    date_strings = ['_date', 'date_']
+    # a default of strings that indicate the column is some kind of datetime column
+    if date_strings is None:
+        date_strings = ['_date', 'date_']
+    # make a list of strings from all available dataframe columns
+    cols_to_convert = [i for i in df.columns]
+    # accommodate any special user-defined mappings
+    special_exclusions = []
+    if special_mappings is not None:
+        for k, v in special_mappings.items():
+            for i in v:
+                df[i] = df[i].astype(k)
+                special_exclusions.append(i)
 
-    for col in df.columns:
-        col_type = df[col].dtype
-        if 'string' not in col_type.name and col_type.name != 'category' and 'datetime' not in col_type.name:
-            cols_to_convert.append(col)
-
-    # leave charge columns untouched to synch with crosswalk mapping
-    if charge_cols is not None:
-        cols_to_convert = [x for x in cols_to_convert if x not in charge_cols]
-        df[charge_cols] = df[charge_cols].astype('string')
-
+    # exclude columns if a list is provided
+    if exclude_cols is not None:
+        cols_to_convert = [i for i in cols_to_convert if i not in exclude_cols]
+    # by default, if special mappings are provided, exclude them from auto optimization
+    if special_exclusions:
+        cols_to_convert = [i for i in cols_to_convert if i not in special_exclusions]
+    # by default, a list of values to be explicitly treated as bools
+    if bool_types is None:
+        bool_types = [True, False, 'true', 'True', 'False', 'false']
+        # TODO: account for only T or only F or 1/0 situations
+    if mp_processors is None:
+        CPUs = mp.cpu_count() // 2
+    # by default, enable multiprocessing to run optimizations in parallel
     if enable_mp:
         Config.my_logger.info('Starting optimization process with multiprocessor.')
         # break out the dataframe into a list of series to be worked on in parallel
         lst_of_series = [df[d] for d in cols_to_convert]
 
-        pool = mp.Pool(Config.CPUs)
+        pool = mp.Pool(CPUs)
         pbar = tqdm(lst_of_series, desc='Running DataFrame Optimization with multiprocessing')
-        _reduce_precision_ = partial(_reduce_precision, date_strings=date_strings)
+        _reduce_precision_ = partial(_reduce_precision
+                                     , date_strings=date_strings
+                                     , bool_types=bool_types
+                                     , categorical_ratio=categorical_ratio
+                                     , categorical_threshold=categorical_threshold
+                                     , final_default_dtype=final_default_dtype
+                                     , enable_mp=enable_mp
+                                     )
         list_of_converted = list(pool.imap(_reduce_precision_, pbar))
         pool.close()
         pool.join()
@@ -171,48 +215,59 @@ def reduce_precision(df, charge_cols=None, enable_mp=True):
     else:
         Config.my_logger.info('Starting optimization process in series.')
         # un comment below to do conversion without MP
-        df[cols_to_convert] = df[cols_to_convert].apply(lambda x: _reduce_precision(x))
+        df[cols_to_convert] = df[cols_to_convert].apply(lambda x: _reduce_precision(x
+                                                                                    , date_strings=date_strings
+                                                                                    , bool_types=bool_types
+                                                                                    , categorical_ratio=categorical_ratio
+                                                                                    , categorical_threshold=categorical_threshold
+                                                                                    , final_default_dtype=final_default_dtype
+                                                                                    , enable_mp=enable_mp
+                                                                                    ))
 
     Config.my_logger.info(f'Converted DF with new dtypes as follows:\n{df.dtypes}')
     Config.my_logger.info(f'Completed DataFrame Optimization. Ending with {mem_usage(df)} memory.')
 
+
     return df
 
 
-def _reduce_precision(x, date_strings):
+def _reduce_precision(x
+                      , date_strings
+                      , bool_types
+                      , categorical_ratio
+                      , categorical_threshold
+                      , final_default_dtype
+                      , enable_mp
+                      ):
     """
     :params x: a pandas series (a column) to convert for dtype precision reduction
     """
     col_name = x.name
     col_type = x.dtype
-    unique_data = list(x.unique())
-    bools = [True, False, 'true', 'True', 'False', 'false']
-    #TODO: account for only T or only F or 1/0 situations
+    # return a unique list of non-na values in the current series
+    unique_data = list(x.dropna().unique())
+
     n_unique = float(len(unique_data))
     n_records = float(len(x))
     cat_ratio = n_unique / n_records
 
-    try:
-        unique_data.remove(np.nan)
-    except:
-        pass
-
     if 'int' in str(col_type):
+        # if integer, make it the smallest possible type of integer
         c_min = x.min()
         c_max = x.max()
 
         if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
-            x= x.astype(np.int8)
+            x = x.astype(np.int8)
         elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
             x = x.astype(np.int16)
         elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
             x = x.astype(np.int32)
         elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
             x = x.astype(np.int64)
-
             # TODO: set precision to unsigned integers with nullable NA
 
     elif 'float' in str(col_type):
+        # if float, make it the smallest possible type of float
         c_min = x.min()
         c_max = x.max()
         if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
@@ -223,27 +278,37 @@ def _reduce_precision(x, date_strings):
             x = x.astype(np.float64)
 
     elif 'datetime' in col_type.name or any(i in str(x.name).lower() for i in date_strings):
+        # if datetime, make it datetime or if the col name matches default date strings
         try:
             x = pd.to_datetime(x)
         except:
+            # TODO: conform to PEP and avoid naked except statement
             pass
 
-    elif any(i in bools for i in unique_data):
+    elif any(i in bool_types for i in unique_data):
+        # make bool types as boolean instead of bool to allow for nullable bools
         x = x.astype('boolean')
-        #TODO: set precision to bool if boolean not needed
 
-    elif cat_ratio < .1 or n_unique < 20:
+    elif cat_ratio < categorical_ratio or n_unique < categorical_threshold:
+        # if the category ratio is smaller than default thresholds, then make the column a categorical
+        # a high level attempt to strike a balance when making columns categorical or not
         try:
+            # return normal categories, i.e. avoid "dog" and "Dog" as different categories
             x = x.str.title()
         except:
+            # TODO: conform to PEP and avoid naked except statement
             pass
 
         x = pd.Categorical(x)
 
     elif all(isinstance(i, str) for i in unique_data):
-        x = x.astype('string')
+        # if all else fails, provide a final dtype as default
+        x = x.astype(final_default_dtype)
 
-    return col_name, x
+    if enable_mp:
+        return col_name, x
+    else:
+        return x
 
 
 def mem_usage(df):

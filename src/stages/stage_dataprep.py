@@ -23,7 +23,9 @@ def stage_dataprep(data_folder, input_file, output_file):
         Config.my_logger.info(f'{input_file_path} has {len(df)} records')
 
         df = (df.pipe(parse_cols)
-                .pipe(reduce_precision, charge_cols=Config.charge_columns)
+                .pipe(reduce_precision
+                      , special_mappings={'string': Config.charge_columns}
+                      )
                 # commented out becuase names are not being processed in this pipeline currently
                 # .pipe(make_titlecase, cols=['first_name', 'last_name', 'middle_name'])
                 .pipe(make_redact, cols=Config.redact_columns)
