@@ -10,7 +10,9 @@ import logging
 
 class Config:
     """
-    Config is a class of global variables.
+    Config is a class of global variables to control aspects of the script.
+    TODO: implement yaml files to control script run
+    TODO: allow user-defined variables with init methods
     """
     CPUs = mp.cpu_count()
 
@@ -23,6 +25,7 @@ class Config:
                     , 'street_dir'
                     , 'street_name'
                       ]
+
     drop_columns = ['charges_statute', 'charges_description', 'charges_type', 'charges_class', 'charges_fbi_code']
 
     micro_col = 'micro_category'
@@ -37,6 +40,7 @@ class Config:
     day_col = 'arrest_day'
     dtg_col = 'arrest_date'
 
+    # this is the charge order from most severe to least severe
     charge_order = [
         'M', 'X', '1', '2', '3', '4'
         , 'A', 'B', 'C', 'L'
@@ -73,7 +77,9 @@ class Config:
     logs_filename = f'{time_string}_log.log'
     logs_file = os.sep.join([logs_folder, logs_filename])
     my_logger = logging
-    # logging.basicConfig(filename=logs_file, level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    # TODO: write logs to file and display in terminal
+    # toggle next two logging.info comments to save logs to file or display to terminal
+    # my_logger.basicConfig(filename=logs_file, level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     my_logger.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
