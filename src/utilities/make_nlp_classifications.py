@@ -2,19 +2,21 @@ from src.utilities.make_classification import *
 from src.utilities.config import Config
 import texthero as hero
 from sklearn.model_selection import train_test_split as tts
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix, plot_confusion_matrix
 import joblib
 import os
 import multiprocessing as mp
 from tqdm import tqdm
 from functools import partial
-
+import matplotlib.pyplot as plt
 
 def make_nlp_classification_model_charge_descriptions(data_folder
                                                       , models_folder
                                                       , model_name_charge_classification
                                                       , df=None
-                                                      , filename='arrests_redacted.bz2'):
+                                                      , filename='arrests_redacted.bz2'
+                                                      , known_mapping='charge_1_description_category_micro'
+                                                      ):
 
     model_path_charge_classification = os.sep.join([models_folder, model_name_charge_classification])
 
@@ -29,7 +31,7 @@ def make_nlp_classification_model_charge_descriptions(data_folder
             Config.my_logger.info(f'Starting NLP Pipeline from {data_file}')
             df = pd.read_pickle(data_file)
 
-        known_classifications = df[['charge_1_description', 'charge_1_description_category_micro']].copy()
+        known_classifications = df[['charge_1_description', known_mapping]].copy()
         known_classifications = known_classifications.dropna()
         known_classifications = known_classifications.reset_index(drop=True)
         known_classifications = known_classifications.rename(columns={'charge_1_description': 'description_original'
@@ -45,7 +47,36 @@ def make_nlp_classification_model_charge_descriptions(data_folder
         y_pred = model.predict(x_test['description_cleaned'])
         y_true = y_test.tolist()
         acc = accuracy_score(y_true, y_pred)
-        Config.my_logger.info(f'Accuracy Score is {acc}')
+        Config.my_logger.info('==== Model Results')
+        Config.my_logger.info(f'==== Accuracy Score is {acc}')
+
+        labels = df[known_mapping].dropna().astype('str').unique().tolist()
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
+
+        cm_df = pd.DataFrame(cm, columns=labels, index=labels)
+        cm_matrix_data = os.sep.join([models_folder, 'arrest_charge_descr_confusion_matrix.csv'])
+        cm_df.to_csv(cm_matrix_data)
+
+        plt.figure(figsize=(15,15))
+        cmap = plt.cm.get_cmap('viridis')
+
+        plot_confusion_matrix(model
+                              , x_test['description_cleaned']
+                              , y_true
+                              , display_labels=labels
+                              # , normalize='all'
+                              , include_values=False
+                              , xticks_rotation=30
+                              , cmap=cmap
+                              )
+        plt.yticks(fontsize="x-small")
+        plt.xticks(fontsize="xx-small")
+
+        cm_matrix_plot = os.sep.join([models_folder, 'arrest_charge_descr_confusion_matrix.png'])
+        plt.title(f'Confusion Matrix for Arrest Charge Description Classification Model\nOverall Accuracy is {acc}. Train Size={len(x_train)} Test Size={len(x_test)}')
+        plt.tight_layout()
+        plt.savefig(cm_matrix_plot)
+        plt.show()
 
         joblib.dump(model, model_path_charge_classification)
         Config.my_logger.info(f'Saving Model to {model_path_charge_classification}')
@@ -178,6 +209,20 @@ def apply_nlp_match_police_related(df
         y_true = y_test.tolist()
         acc = accuracy_score(y_true, y_pred)
         Config.my_logger.info(f'Accuracy Score is {acc}')
+
+        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+        Config.my_logger.info(f'CM tn {tn} ,fp {fp}, fn {fn}, tp {tp}')
+
+        plt.figure()
+        plot_confusion_matrix(model
+                              , x_test['description_cleaned']
+                              , y_true
+                              )
+        plt.title(f'Confusion Matrix for Police Related Flag Classification.\nOverall Accuracy Score is {acc}. Train Size={len(x_train)}. Test Size={len(x_test)}.')
+        cm_matrix_plot = os.sep.join([models_folder, 'arrest_police_related_confusion_matrix.png'])
+        plt.tight_layout()
+        plt.savefig(cm_matrix_plot)
+        plt.show()
 
         joblib.dump(model, model_path)
         Config.my_logger.info(f'Saving Police Related Classification Model to {model_path}')
