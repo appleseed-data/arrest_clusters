@@ -54,16 +54,22 @@ import requests
 import pandas as pd
 import joblib
 
-# link to the actual data file in this repo
+# link to the compressed pickle object in this repo
 url = "https://github.com/appleseed-data/arrest_clusters/blob/main/data/arrests_redacted_classified.bz2?raw=true"
-# connect to a data stream with IO
-data_stream = BytesIO(requests.get(url).content)
-# load the pickled object
-data_file = joblib.load(data_stream)
-# read the pickle object as a pandas dataframe
-df = pd.read_pickle(data_file)
-# print the first several records
-df.head()
+
+# function to get the pickled object
+def get_git_pickle(data_path):
+    """
+    :params data_path: the text of a url string to the pickled object
+    :return tgt_file: a pandas dataframe object
+    """
+    data_stream = BytesIO(requests.get(data_path).content)
+    tgt_file = joblib.load(data_stream)
+    return tgt_file
+
+df = get_git_pickle(url)
+
+print(df.head())
 ```
 
 
@@ -76,7 +82,7 @@ A brief description of the data pipeline to process source arrest data.
   
 ### Data Classification of Arrest Charge Descriptions
 
-A brief description of charge classifications. 
+Overview. The CPD arrest data contains four columns of arrest charges, numbered from 1 to 4, i.e., Charge 1 Class, Charge 1 Description, etc. Not every arrest has charge data and not every arrest has more than one charge. Where an arrest record has charge information, a corresponding charge category description is created, i.e. Charge 1 Description Category Micro, Charge 1 Description Category Macro. The Micro category are classifications of a granular nature - about 40 categories of descriptions. The Macro category group the Micro categories into 6 high-level groups to aid in aggregate analysis.
 
 * What: Convert raw text of arrest charge description to one of many discrete, semantic categories of arrest. 
 * Why: There are thousands of charge descriptions that vary slightly but are fundamentally the same type of arrest charge, reducing the number of unique charges into discrete categories makes analysis simpler to perform. 
