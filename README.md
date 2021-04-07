@@ -82,7 +82,7 @@ A brief description of the data pipeline to process source arrest data.
   
 ### Data Classification of Arrest Charge Descriptions
 
-A brief description of charge classifications. 
+Overview. The CPD arrest data contains four columns of arrest charges, numbered from 1 to 4, i.e., Charge 1 Class, Charge 1 Description, etc. Where an arrest record has charge information, a corresponding charge category description is created, i.e. Charge 1 Description Category Micro, Charge 1 Description Category Macro. The Micro category are classifications of a granular nature - about 40 categories of descriptions. The Macro category group the Micro categories into 6 high-level groups to aid in aggregate analysis.
 
 * What: Convert raw text of arrest charge description to one of many discrete, semantic categories of arrest. 
 * Why: There are thousands of charge descriptions that vary slightly but are fundamentally the same type of arrest charge, reducing the number of unique charges into discrete categories makes analysis simpler to perform. 
