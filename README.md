@@ -44,14 +44,26 @@ python main.py
 
 ### Data Prep
 
-* TBP
+A brief description of the data pipeline to process source arrest data. 
+
+* TBP 
 
   
 ### Data Classification of Arrest Charge Descriptions
 
-* Direct Match on Text with Crosswalk
-* Fuzzy Match on Text with Crosswalk
-* NLP Match on Text with Crosswalk
+A brief description of charge classifications. 
+
+* What: Convert raw text of arrest charge description to one of many discrete, semantic categories of arrest. 
+* Why: There are thousands of charge descriptions that vary slightly but are fundamentally the same type of arrest charge, reducing the number of unique charges into discrete categories makes analysis simpler to perform. 
+* How: Leverage a labeled dataset of charge descriptions to categories from this worksheet [CPD Crosswalk](https://github.com/appleseed-data/arrest_clusters/blob/main/data/CPD_crosswalk_final.xlsx) and apply classification methods.
+
+#### Classification Methods to Map Charge Descriptions to Categories
+
+A brief description of how charge classifications are performed.
+
+* Direct Match on Text with Crosswalk: Where there is a direct match in the labeled dataset, map the associated charge categories to the charge description.
+* Fuzzy Match on Text with Crosswalk: Where there is a slight (fuzzy) difference between the labeled dataset and the charge description (an edit distance of 4), map the charge description to a charge category.
+* NLP Match on Text with Crosswalk: If any charges are not mapped after direct and fuzzy match, learn a model to peform multi-class text classification of charge descriptions to charge categories using Naive Bayes, then apply the model to claassify texts.
 
 ## Analysis
 
