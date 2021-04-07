@@ -96,10 +96,10 @@ Using a labeled dataset, map charge descriptions to various categories. Most rec
 * Fuzzy Match on Text with Crosswalk: Where there is a slight (fuzzy) difference between the labeled dataset and the charge description (an edit distance of 4), map the charge description to a charge category.
 * NLP Match on Text with Crosswalk: If any charges are not mapped after direct and fuzzy match (approx 10%), learn a model to peform multi-class text classification of charge descriptions to charge categories using Naive Bayes, then apply the model to claassify texts.
 
-Confusion Matrix and Accuracy Information for NLP Classification of Charge Descriptions
+Confusion Matrix and Accuracy Information for NLP Classification of Charge Descriptions.
 ![confusion matrix 1](models/arrest_charge_descr_confusion_matrix.png)
 
-Confusion Matrix and Accuracy Information for NLP Classification of Police-Related Flag
+Confusion Matrix and Accuracy Information for NLP Classification of Police-Related Flag where 0 is False, and 1 is True.
 ![confusion matrix 1](models/arrest_police_related_confusion_matrix.png)
 
 ## Analysis
