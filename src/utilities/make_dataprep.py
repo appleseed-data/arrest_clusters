@@ -10,7 +10,7 @@ import numpy as np
 import multiprocessing as mp
 from tqdm import tqdm
 from functools import partial
-
+import logging
 
 def prep_districts(df, target_col='district'):
     Config.my_logger.info('prep_districts() Converting district data to string.')
@@ -135,6 +135,7 @@ def make_titlecase(df, cols):
 
 
 def reduce_precision(df
+                     , parse_col_names=True
                      , enable_mp=True
                      , mp_processors=None
                      , date_strings=None
@@ -147,7 +148,8 @@ def reduce_precision(df
                      ):
     """
     :params df: a pandas dataframe to optimize
-    :params enable_mp: If None, default to True. Set to false to run in series.
+    :params parse_col_names: Default to True; returns columns as lower case without spaces
+    :params enable_mp: Default to True; runs optimization on columns in parallel. Set to false to run in series.
     :params date_strings: If None, default to a list of strings that indicate date columns -> ['_date', 'date_']
     :params exclude_cols: Default to None. A list of strings that indicate columns to exclude
     :params special_mappings: Default to None.
@@ -162,7 +164,7 @@ def reduce_precision(df
     :params final_default_dtype: If None, default to "string" dtype.
     """
 
-    Config.my_logger.info(f'Starting DataFrame Optimization. Starting with {mem_usage(df)} memory.')
+    logging.info(f'Starting DataFrame Optimization. Starting with {mem_usage(df)} memory.')
     cols_to_convert = []
     # a default of strings that indicate the column is some kind of datetime column
     if date_strings is None:
@@ -213,7 +215,7 @@ def reduce_precision(df
         for (col_name, col_series) in list_of_converted:
             df[col_name] = col_series
     else:
-        Config.my_logger.info('Starting optimization process in series.')
+        logging.info('Starting optimization process in series.')
         # un comment below to do conversion without MP
         df[cols_to_convert] = df[cols_to_convert].apply(lambda x: _reduce_precision(x
                                                                                     , date_strings=date_strings
@@ -224,9 +226,8 @@ def reduce_precision(df
                                                                                     , enable_mp=enable_mp
                                                                                     ))
 
-    Config.my_logger.info(f'Converted DF with new dtypes as follows:\n{df.dtypes}')
-    Config.my_logger.info(f'Completed DataFrame Optimization. Ending with {mem_usage(df)} memory.')
-
+    logging.info(f'Converted DF with new dtypes as follows:\n{df.dtypes}')
+    logging.info(f'Completed DataFrame Optimization. Ending with {mem_usage(df)} memory.')
 
     return df
 
