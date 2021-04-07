@@ -1,6 +1,6 @@
 # arrest_clusters analysis
 
-This project processes arrest data from Chicago Police Department into an analysis-friendly format and runs several types of analysis. 
+This project processes arrest data from Chicago Police Department into an analysis-friendly format and runs several types of analysis. The current analytical focus is of a clustering nature; however, this project primarily manages a data cleansing and categorization process of Chicago arrest data. 
 
 
 ## Source
