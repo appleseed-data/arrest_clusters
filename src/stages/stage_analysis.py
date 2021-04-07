@@ -10,11 +10,17 @@ def stage_analysis_timeofday(df
                          , target_charge_class='charge_1_class'
                          , target_charge_name='lead_charge'
                          , target_charge_cat_num='lead_charge_code'
+                         , target_year=None
                          ):
     Config.my_logger.info('Running stage_analysis_timeofday()')
+
+    if target_year is not None:
+        Config.my_logger.info(f'Filtering data by year {target_year}')
+        df = df[df[Config.dtg_col].dt.year == target_year].reset_index(drop=True)
+
     # return min and max dates
-    min_date = min(df['arrest_date']).year
-    max_date = max(df['arrest_date']).year
+    min_date = min(df[Config.dtg_col]).year
+    max_date = max(df[Config.dtg_col]).year
     # return hours of the day as categories for plotting (24 hr clock)
     plot_categories = df[Config.hr_col].astype('str').unique().tolist()
     plot_categories.sort()

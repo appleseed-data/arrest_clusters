@@ -211,7 +211,10 @@ def make_radar_fig(df
         elif plot_param_type == 'Not Specified':
             charge_types = ['Not Specified']
 
-        title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={N_records}'
+        if min_date == max_date:
+            title = f'{title_base}\n {title_nuance} During {min_date} n={N_records}'
+        else:
+            title = f'{title_base}\n {title_nuance} From {min_date} to {max_date} n={N_records}'
 
         for charge_type in charge_types:
             if charge_type == 'Felony':

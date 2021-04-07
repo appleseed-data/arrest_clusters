@@ -35,6 +35,7 @@ class Config:
     year_col = 'arrest_year'
     month_col = 'arrest_month'
     day_col = 'arrest_day'
+    dtg_col = 'arrest_date'
 
     charge_order = [
         'M', 'X', '1', '2', '3', '4'
