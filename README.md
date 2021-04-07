@@ -48,17 +48,21 @@ URL to Output file:
 
 How to Get and Read Compressed Pandas Pickle from a Git Repo
 ```python3
+# get necessary dependencies
 from io import BytesIO
 import requests
 import pandas as pd
 import joblib
 
+# link to the actual data file in this repo
 url = "https://github.com/appleseed-data/arrest_clusters/blob/main/data/arrests_redacted_classified.bz2?raw=true"
-
+# connect to a data stream with IO
 data_stream = BytesIO(requests.get(url).content)
+# load the pickled object
 data_file = joblib.load(data_stream)
+# read the pickle object as a pandas dataframe
 df = pd.read_pickle(data_file)
-
+# print the first several records
 df.head()
 ```
 
