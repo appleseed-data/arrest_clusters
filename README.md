@@ -90,11 +90,17 @@ Overview. The CPD arrest data contains four columns of arrest charges, numbered 
 
 #### Classification Methods to Map Charge Descriptions to Categories
 
-A brief description of how charge classifications are performed.
+Using a labeled dataset, map charge descriptions to various categories. Most records (approx 90%) are mapped through a direct or fuzzy match, the rest are mapped with an NLP classifier, n=523,184. 
 
 * Direct Match on Text with Crosswalk: Where there is a direct match in the labeled dataset, map the associated charge categories to the charge description.
 * Fuzzy Match on Text with Crosswalk: Where there is a slight (fuzzy) difference between the labeled dataset and the charge description (an edit distance of 4), map the charge description to a charge category.
-* NLP Match on Text with Crosswalk: If any charges are not mapped after direct and fuzzy match, learn a model to peform multi-class text classification of charge descriptions to charge categories using Naive Bayes, then apply the model to claassify texts.
+* NLP Match on Text with Crosswalk: If any charges are not mapped after direct and fuzzy match (approx 10%), learn a model to peform multi-class text classification of charge descriptions to charge categories using Naive Bayes, then apply the model to claassify texts.
+
+Confusion Matrix and Accuracy Information for NLP Classification of Charge Descriptions
+![confusion matrix 1](models/arrest_charge_descr_confusion_matrix.png)
+
+Confusion Matrix and Accuracy Information for NLP Classification of Police-Related Flag
+![confusion matrix 1](models/arrest_police_related_confusion_matrix.png)
 
 ## Analysis
 
