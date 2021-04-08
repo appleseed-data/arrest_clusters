@@ -23,8 +23,11 @@ def stage_dataprep(data_folder, input_file, output_file):
         Config.my_logger.info(f'{input_file_path} has {len(df)} records')
 
         df = (df.pipe(parse_cols)
-                .pipe(reduce_precision
-                      , special_mappings={'string': Config.charge_columns}
+                .pipe(optimize
+                      , special_mappings={'string': Config.charge_columns
+                                          ,'datetime': ['received_in_lockup', 'released_from_lockup']}
+                      , parse_col_names=False
+                      , enable_mp=True
                       )
                 # commented out becuase names are not being processed in this pipeline currently
                 # .pipe(make_titlecase, cols=['first_name', 'last_name', 'middle_name'])
