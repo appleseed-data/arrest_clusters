@@ -47,6 +47,7 @@ openpyxl==3.0.7
 packaging==20.9
 pandas==1.2.3
 pathy==0.4.0
+pd-helper==0.1.5
 Pillow==8.1.2
 plotly==4.14.3
 preshed==3.0.5
@@ -72,6 +73,7 @@ rsa==4.7.2
 scikit-learn==0.24.1
 scipy==1.6.1
 seaborn==0.11.1
+shortuuid==1.0.1
 six==1.15.0
 sklearn==0.0
 smart-open==3.0.0
