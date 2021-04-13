@@ -1,4 +1,5 @@
 
 
-def geospatial_analysis(df, data_folder, figures_folder):
+
+def geospatial_analysis(df):
     print(df.head())

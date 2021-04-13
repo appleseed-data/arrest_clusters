@@ -7,6 +7,41 @@ import time
 import os
 import logging
 
+"""Runs system configurations
+"""
+from src.utilities import constants
+from src.utilities.constants import *
+
+import logging
+import sys
+
+import os
+from os.path import join
+
+
+def run_configuration():
+    """Runs basic configuration for the workflow.
+    """
+    for folder in ALL_FOLDERS:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+    logger = logging.getLogger("pipeline").getChild("configuration")
+    format = "%(asctime)s:%(name)s:%(levelname)s:%(message)s"
+
+    time_string = time.strftime("%Y%m%d-%H%M%S")
+    log_filename = f'{time_string}_log.log'
+    filename = join(constants.LOGGING_FOLDER, log_filename)
+
+    log_formatter = logging.Formatter(format)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(log_formatter)
+
+    logging.basicConfig(filename=filename, format=format, level=logging.INFO)
+    logging.getLogger().addHandler(stream_handler)
+
+    logger.info("Logging configurations finished.")
+
 
 class Config:
     """
@@ -67,20 +102,6 @@ class Config:
                    , pp.stem
                      ]
 
-    time_string = time.strftime("%Y%m%d-%H%M%S")
-
-    logs_folder = os.sep.join([os.environ['PWD'], 'logs'])
-
-    if not os.path.exists(logs_folder):
-        os.makedirs(logs_folder)
-
-    logs_filename = f'{time_string}_log.log'
-    logs_file = os.sep.join([logs_folder, logs_filename])
-    my_logger = logging
-    # TODO: write logs to file and display in terminal
-    # toggle next two logging.info comments to save logs to file or display to terminal
-    # my_logger.basicConfig(filename=logs_file, level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    my_logger.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
 

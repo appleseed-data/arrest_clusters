@@ -1,5 +1,6 @@
 # https://stackoverflow.com/questions/59390562/how-to-use-time-as-x-axis-for-a-scatterplot-with-seaborn
 
+from src.utilities.constants import *
 import os
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -12,11 +13,12 @@ from src.utilities.config import Config
 from scipy import stats
 
 from zincbase import KB
+import logging
 
 plt.style.use('seaborn')
 
 
-def make_unit_network(df, charge_types, figures_folder, target_charge_type='charge_1_description_category_macro'):
+def make_unit_network(df, charge_types, target_charge_type='charge_1_description_category_macro'):
     lead_charge_code = 'lead_charge_code'
     lead_charge_code_type = f'{lead_charge_code}_type'
 
@@ -78,11 +80,10 @@ def make_unit_network(df, charge_types, figures_folder, target_charge_type='char
 
 def make_unit_stats(df
                     , charge_types
-                    , figures_folder
                     , target_charge_type='lead_charge_code_type'
                     , filter_outliers=3
                     ):
-    Config.my_logger.info('make_unit_stats() Starting Stats Analysis by Unit')
+    logging.info('make_unit_stats() Starting Stats Analysis by Unit')
 
     data = df[['lead_charge_police_related', 'beat', 'unit', 'arrest_time', 'lead_charge_code']].copy(deep=True)
 
@@ -124,7 +125,7 @@ def make_unit_stats(df
         plt.title(f'Distribution of arrests by time of day and unit.\nGrouped by {i} Arrests.')
         plt.tight_layout()
         file_name = f'tod_arrests_hist_{i}.png'
-        file_path = os.sep.join([figures_folder, file_name])
+        file_path = os.sep.join([FIGURES_FOLDER, file_name])
         plt.savefig(file_path)
         plt.show()
 
@@ -163,13 +164,12 @@ def make_unit_stats(df
         g.fig.suptitle(f'Distribution of arrests by time of day and unit.\nGrouped by {i} and Police-Related Arrests.')
         plt.tight_layout()
         file_name = f'tod_arrests_hist_{i}_policerelated.png'
-        file_path = os.sep.join([figures_folder, file_name])
+        file_path = os.sep.join([FIGURES_FOLDER, file_name])
         plt.savefig(file_path)
         plt.show()
 
 
 def make_radar_fig(df
-                   , figures_folder
                    , max_date
                    , min_date
                    , values_plot
@@ -186,7 +186,7 @@ def make_radar_fig(df
                    , title_base='Chicago Police Department Arrest Analysis - Arrests by Time of Day (24 hr Clock)'
                    ):
 
-    Config.my_logger.info('make_radar_fig() Starting Time of Day Analysis')
+    logging.info('make_radar_fig() Starting Time of Day Analysis')
     agg_name = f'{agg_col}_{agg_type}'
     zscore_col = f'{agg_name}_zscore'
 
@@ -341,7 +341,7 @@ def make_radar_fig(df
         plt.xlabel('Count of Arrests')
         plt.ylabel('Time of Day (24 hr)', labelpad=20)
         plt.tight_layout()
-        file_path = os.sep.join([figures_folder, figure_name])
+        file_path = os.sep.join([FIGURES_FOLDER, figure_name])
         plt.savefig(file_path)
 
         plt.show()

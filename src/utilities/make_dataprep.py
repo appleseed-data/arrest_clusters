@@ -1,5 +1,5 @@
 from src.utilities.config import Config
-
+from src.utilities.constants import *
 # import modin.pandas as pd
 # import ray
 # ray.init()
@@ -13,24 +13,26 @@ from functools import partial
 import logging
 # pd-helper replaces local function reduce_precision
 from pd_helper.helper import optimize
+import logging
+
 
 def prep_districts(df, target_col='district'):
-    Config.my_logger.info('prep_districts() Converting district data to string.')
+    logging.info('prep_districts() Converting district data to string.')
     df[target_col] = df[target_col].fillna(0)
     df[target_col] = df[target_col].astype('int')
     df[target_col] = df[target_col].astype('str')
     return df
 
 
-def prep_beats(df, data_folder, target_col='beat', crosswalk_file='cpd_units_beats_crosswalk.csv'):
-    Config.my_logger.info('prep_beats() Converting beats and unit data to string')
+def prep_beats(df, target_col='beat', crosswalk_file='cpd_units_beats_crosswalk.csv'):
+    logging.info('prep_beats() Converting beats and unit data to string')
     df[target_col] = df[target_col].fillna(0)
     df[target_col] = df[target_col].astype('int')
     df[target_col] = df[target_col].astype('str')
     df[target_col] = df[target_col].str.zfill(4)
 
-    Config.my_logger.info(f'Reading unit beat crosswalk from {crosswalk_file}')
-    data_path = os.sep.join([data_folder, crosswalk_file])
+    logging.info(f'Reading unit beat crosswalk from {crosswalk_file}')
+    data_path = os.sep.join([DATA_FOLDER, crosswalk_file])
     cpd_unit_beat_crosswalk = pd.read_csv(data_path)
     cpd_unit_beat_crosswalk = cpd_unit_beat_crosswalk.astype('str')
     cpd_unit_beat_crosswalk['unit'] = cpd_unit_beat_crosswalk['unit'].str.zfill(3)
@@ -48,7 +50,7 @@ def prep_time_of_day(df, tgt_date_col='arrest_date', index_id='arrest_id'):
     break out arrest times into consumable integers for grouping
     # ref: https://stackoverflow.com/questions/32344533/how-do-i-round-datetime-column-to-nearest-quarter-hour
     """
-    Config.my_logger.info('prep_time_of_day() extracting time of day columns')
+    logging.info('prep_time_of_day() extracting time of day columns')
     df[Config.min_col] = df[tgt_date_col].dt.round('15min')
     df[Config.min_col] = df[Config.min_col].dt.minute / 60
     df[Config.hr_col] = df[tgt_date_col].dt.hour
@@ -75,12 +77,12 @@ def categorize_charge_cols(df):
     if "charges_class" in target_cols:
         target_cols.remove("charges_class")
 
-    Config.my_logger.info(f'Categorizing {target_cols} in order of charge class severity.')
+    logging.info(f'Categorizing {target_cols} in order of charge class severity.')
 
     df[target_cols] = df[target_cols].astype('object')
     # set the order of severity in charges from least to greatest
     Config.charge_order.reverse()
-    Config.my_logger.info(f'Charge Severity Codes: {Config.charge_order}')
+    logging.info(f'Charge Severity Codes: {Config.charge_order}')
     # make target cols categorical
     for i in target_cols:
         df[i] = pd.Categorical(df[i], ordered=True, categories=Config.charge_order)
@@ -105,7 +107,7 @@ def make_categorical(df, cols):
 
 
 def parse_cols(df):
-    Config.my_logger.info('Parsing column headers to lower case and replacing spaces with underscore.')
+    logging.info('Parsing column headers to lower case and replacing spaces with underscore.')
     df.columns = map(str.lower, df.columns)
     df.columns = df.columns.str.replace(' ', '_')
     df.columns = df.columns.str.replace('-', '_')
@@ -113,7 +115,7 @@ def parse_cols(df):
 
 
 def make_titlecase(df, cols):
-    Config.my_logger.info(f'Converting data to titlecase and removing punctuation for columns:\n{cols}')
+    logging.info(f'Converting data to titlecase and removing punctuation for columns:\n{cols}')
 
     def make_titlecase_(x):
         x = x.str.title()
