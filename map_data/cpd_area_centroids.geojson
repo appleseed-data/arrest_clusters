@@ -1,0 +1,32 @@
+{
+"type": "FeatureCollection",
+"name": "cpd_area_centroids",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "dist_label": "17TH", "dist_num": "17" }, "geometry": { "type": "Point", "coordinates": [ -87.724143113541231, 41.966390061562841 ] } },
+{ "type": "Feature", "properties": { "dist_label": "20TH", "dist_num": "20" }, "geometry": { "type": "Point", "coordinates": [ -87.677595498545116, 41.97960214338255 ] } },
+{ "type": "Feature", "properties": { "dist_label": "31ST", "dist_num": "31" }, "geometry": { "type": "Point", "coordinates": [ -87.828617592749126, 41.979992781624361 ] } },
+{ "type": "Feature", "properties": { "dist_label": "31ST", "dist_num": "31" }, "geometry": { "type": "Point", "coordinates": [ -87.816795137353665, 41.963879784747256 ] } },
+{ "type": "Feature", "properties": { "dist_label": "19TH", "dist_num": "19" }, "geometry": { "type": "Point", "coordinates": [ -87.66423665680486, 41.947776768095309 ] } },
+{ "type": "Feature", "properties": { "dist_label": "25TH", "dist_num": "25" }, "geometry": { "type": "Point", "coordinates": [ -87.760008721282162, 41.921670599819457 ] } },
+{ "type": "Feature", "properties": { "dist_label": "14TH", "dist_num": "14" }, "geometry": { "type": "Point", "coordinates": [ -87.6923257111319, 41.918702278163032 ] } },
+{ "type": "Feature", "properties": { "dist_label": "31ST", "dist_num": "31" }, "geometry": { "type": "Point", "coordinates": [ -87.693598905855993, 41.695397501635625 ] } },
+{ "type": "Feature", "properties": { "dist_label": "22ND", "dist_num": "22" }, "geometry": { "type": "Point", "coordinates": [ -87.672381933343459, 41.704723277003666 ] } },
+{ "type": "Feature", "properties": { "dist_label": "5TH", "dist_num": "5" }, "geometry": { "type": "Point", "coordinates": [ -87.615928806997175, 41.683383850776252 ] } },
+{ "type": "Feature", "properties": { "dist_label": "24TH", "dist_num": "24" }, "geometry": { "type": "Point", "coordinates": [ -87.683122523074175, 42.004854636188689 ] } },
+{ "type": "Feature", "properties": { "dist_label": "16TH", "dist_num": "16" }, "geometry": { "type": "Point", "coordinates": [ -87.835082267142056, 41.973998091638848 ] } },
+{ "type": "Feature", "properties": { "dist_label": "8TH", "dist_num": "8" }, "geometry": { "type": "Point", "coordinates": [ -87.728001478607624, 41.778820142305804 ] } },
+{ "type": "Feature", "properties": { "dist_label": "18TH", "dist_num": "18" }, "geometry": { "type": "Point", "coordinates": [ -87.638524937340208, 41.907411780950454 ] } },
+{ "type": "Feature", "properties": { "dist_label": "12TH", "dist_num": "12" }, "geometry": { "type": "Point", "coordinates": [ -87.669456300963191, 41.878223384697705 ] } },
+{ "type": "Feature", "properties": { "dist_label": "11TH", "dist_num": "11" }, "geometry": { "type": "Point", "coordinates": [ -87.720852442221002, 41.882638310337235 ] } },
+{ "type": "Feature", "properties": { "dist_label": "7TH", "dist_num": "7" }, "geometry": { "type": "Point", "coordinates": [ -87.653432141806306, 41.775451638633946 ] } },
+{ "type": "Feature", "properties": { "dist_label": "3RD", "dist_num": "3" }, "geometry": { "type": "Point", "coordinates": [ -87.595805652261632, 41.772138109448633 ] } },
+{ "type": "Feature", "properties": { "dist_label": "4TH", "dist_num": "4" }, "geometry": { "type": "Point", "coordinates": [ -87.560733516881569, 41.701782165386888 ] } },
+{ "type": "Feature", "properties": { "dist_label": "6TH", "dist_num": "6" }, "geometry": { "type": "Point", "coordinates": [ -87.634752651648469, 41.743453178911864 ] } },
+{ "type": "Feature", "properties": { "dist_label": "10TH", "dist_num": "10" }, "geometry": { "type": "Point", "coordinates": [ -87.71098560800236, 41.847288598706932 ] } },
+{ "type": "Feature", "properties": { "dist_label": "1ST", "dist_num": "1" }, "geometry": { "type": "Point", "coordinates": [ -87.6253360658433, 41.864987823053902 ] } },
+{ "type": "Feature", "properties": { "dist_label": "9TH", "dist_num": "9" }, "geometry": { "type": "Point", "coordinates": [ -87.665037815913692, 41.819764957792366 ] } },
+{ "type": "Feature", "properties": { "dist_label": "2ND", "dist_num": "2" }, "geometry": { "type": "Point", "coordinates": [ -87.609538613368144, 41.80867489334554 ] } },
+{ "type": "Feature", "properties": { "dist_label": "15TH", "dist_num": "15" }, "geometry": { "type": "Point", "coordinates": [ -87.76008750721806, 41.883926255028506 ] } }
+]
+}
