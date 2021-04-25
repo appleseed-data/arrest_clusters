@@ -5,6 +5,7 @@ import pandas as pd
 pd.set_option('display.max_columns', None)
 import numpy as np
 from fuzzypanda import matching
+import logging
 
 
 def prep_crosswalk(filename, sheet_name='CPD_crosswalk_final'):
@@ -24,7 +25,7 @@ def prep_crosswalk(filename, sheet_name='CPD_crosswalk_final'):
 
 
 def apply_crosswalk_directmatch(df, micro_charge_map=None, macro_charge_map=None, police_related_map=None):
-    Config.my_logger.info('Mapping CPD Crosswalk to classifications where there is a direct match.')
+    logging.info('Mapping CPD Crosswalk to classifications where there is a direct match.')
 
     if micro_charge_map is not None:
         # read and set descriptions to category as dictionary maps
@@ -51,7 +52,7 @@ def apply_crosswalk_directmatch(df, micro_charge_map=None, macro_charge_map=None
 
 
 def apply_crosswalk_fuzzymatch(df, micro_charge_map, macro_charge_map, police_related_map, max_edit_distance=4):
-    Config.my_logger.info('Mapping CPD Crosswalk to classifications where there is a fuzzy match.')
+    logging.info('Mapping CPD Crosswalk to classifications where there is a fuzzy match.')
 
     # return a dictionary version of the cpd crosswalk
     micro_charge_dict = micro_charge_map.set_index('description')
@@ -104,14 +105,14 @@ def apply_crosswalk_fuzzymatch(df, micro_charge_map, macro_charge_map, police_re
     for idx in range(n_cols):
         col = Config.charge_columns_macro[idx]
         start_count = df[col].isna().sum()
-        Config.my_logger.info(f'Mapping Macro Categories for charges -{col}- for {start_count}')
+        logging.info(f'Mapping Macro Categories for charges -{col}- for {start_count}')
         df[col] = df[Config.charge_columns_micro[idx]].map(macro_charge_map)
         end_count = df[col].isna().sum()
-        Config.my_logger.info(f'Mapped {start_count - end_count}')
+        logging.info(f'Mapped {start_count - end_count}')
 
     df = df.drop(columns=['flag'])
 
-    Config.my_logger.info('Completed Fuzzy Matches.')
+    logging.info('Completed Fuzzy Matches.')
 
     return df
 
@@ -127,19 +128,19 @@ def run_fuzzy(df
               , police_related_col=None
               ):
 
-    Config.my_logger.info(f'- Trying Fuzzy Match for {charge_description}')
+    logging.info(f'- Trying Fuzzy Match for {charge_description}')
 
     results = []
 
     if police_related_map is not None:
-        Config.my_logger.info(f'- Starting Police Related Flag Matching for {charge_description}')
+        logging.info(f'- Starting Police Related Flag Matching for {charge_description}')
         # rename the police related map for convenience
         mapping_df = police_related_map
         # do mapping where there is a description but no category mapping
         df['flag'] = ~df[charge_description].isna() & df[police_related_col].isna()
         # get a count of records that are eligible to be mapped
         start_counts = df['flag'].value_counts()
-        Config.my_logger.info(f'-- Mapping Status: {start_counts[True]} remaining that need to be mapped for {police_related_col}')
+        logging.info(f'-- Mapping Status: {start_counts[True]} remaining that need to be mapped for {police_related_col}')
 
         # run a fuzzy match on columns that need to be matched
         df[df['flag'] == True] = do_fuzzy_match(left_dataframe=df[df['flag'] == True].copy()
@@ -152,7 +153,7 @@ def run_fuzzy(df
         # get a new count after doing matches
         df['flag'] = ~df[charge_description].isna() & df[police_related_col].isna()
         end_counts = df['flag'].value_counts()
-        Config.my_logger.info(f'-- After fuzzy match, there are {end_counts[True]} unmapped records remaining.')
+        logging.info(f'-- After fuzzy match, there are {end_counts[True]} unmapped records remaining.')
 
         result = tuple((police_related_col, df[police_related_col]))
         results.append(result)
@@ -163,14 +164,14 @@ def run_fuzzy(df
 
         # run fuzzy matching for micro and macro charge descriptions
         for category in categories:
-            Config.my_logger.info(f'- Starting Charge Category Description Matching for {category}')
+            logging.info(f'- Starting Charge Category Description Matching for {category}')
             # forcing logic to only map NLP model to micro categories, map macro cats based on micro in next part
             mapping_df = micro_charge_map if 'micro' in category else None
             # do mapping where there is a description but no category mapping
             df['flag'] = ~df[charge_description].isna() & df[category].isna()
             # get a count of records that are eligible to be mapped
             start_counts = df['flag'].value_counts()
-            Config.my_logger.info(f'-- Mapping Status: {start_counts[True]} remaining that need to be mapped for {category}')
+            logging.info(f'-- Mapping Status: {start_counts[True]} remaining that need to be mapped for {category}')
 
             if mapping_df is not None:
 
@@ -185,7 +186,7 @@ def run_fuzzy(df
                 # get a new count after doing matches
                 df['flag'] = ~df[charge_description].isna() & df[category].isna()
                 end_counts = df['flag'].value_counts()
-                Config.my_logger.info(f'-- After fuzzy match, there are {end_counts[True]} unmapped records remaining.')
+                logging.info(f'-- After fuzzy match, there are {end_counts[True]} unmapped records remaining.')
 
                 result = tuple((category, df[category]))
                 results.append(result)
@@ -205,8 +206,8 @@ def do_fuzzy_match(left_dataframe
     # the match returns a value that represents the source column but that matches the category column exactly -> proxy
     # use the proxy to match to the dictionary as a direct match
     N = len(left_dataframe)
-    Config.my_logger.info(f'-- Trying to map {N} records with fuzzy match.')
-    Config.my_logger.info(f'--- match left on {left_cols} | match right on {right_cols}')
+    logging.info(f'-- Trying to map {N} records with fuzzy match.')
+    logging.info(f'--- match left on {left_cols} | match right on {right_cols}')
 
     matching.get_fuzzy_columns(left_dataframe=left_dataframe
                               , right_dataframe=right_dataframe
@@ -224,7 +225,7 @@ def do_fuzzy_match(left_dataframe
 
 
 def apply_manual_match(df, criteria):
-    Config.my_logger.info('Mapping manual matches for CTA.')
+    logging.info('Mapping manual matches for CTA.')
 
     # create a nested list to iterate through
     target_columns = list(zip(Config.charge_columns, tuple(zip(Config.charge_columns_micro, Config.charge_columns_macro))))
@@ -236,7 +237,7 @@ def apply_manual_match(df, criteria):
                 # do mapping where there is a description but no category mapping
                 df['flag'] = ~df[charge_description].isna() & df[category].isna() & df[charge_description].str.startswith(issue[0])
                 start_counts = df['flag'].value_counts()
-                Config.my_logger.info(f'-- Manually applying mapping for: {start_counts[True]} in {category} starting with {issue[0]}')
+                logging.info(f'-- Manually applying mapping for: {start_counts[True]} in {category} starting with {issue[0]}')
                 if 'micro' in category:
                     df[category] = np.where(df['flag']==True, issue[1][0], df[category])
                 if 'macro' in category:

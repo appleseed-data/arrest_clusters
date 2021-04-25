@@ -1,21 +1,21 @@
 from src.utilities.config import Config
+from src.utilities.constants import *
 from src.utilities.make_analysis_timeofday import make_radar_fig, make_unit_stats
 from src.utilities.make_geospatial_analysis import geospatial_analysis
 
 from math import pi
+import logging
 
 def stage_analysis_timeofday(df
-                         , data_folder
-                         , figures_folder
                          , target_charge_class='charge_1_class'
                          , target_charge_name='lead_charge'
                          , target_charge_cat_num='lead_charge_code'
                          , target_year=None
                          ):
-    Config.my_logger.info('Running stage_analysis_timeofday()')
+    logging.info('Running stage_analysis_timeofday()')
 
     if target_year is not None:
-        Config.my_logger.info(f'Filtering data by year {target_year}')
+        logging.info(f'Filtering data by year {target_year}')
         df = df[df[Config.dtg_col].dt.year == target_year].reset_index(drop=True)
 
     # return min and max dates
@@ -50,7 +50,6 @@ def stage_analysis_timeofday(df
                    }
 
     make_radar_fig(df=df
-                   , figures_folder=figures_folder
                    , plot_params=plot_params
                    , max_date=max_date
                    , min_date=min_date
@@ -62,4 +61,4 @@ def stage_analysis_timeofday(df
                    , target_charge_cat_num=target_charge_cat_num
                    )
 
-    make_unit_stats(df, charge_types=charge_types, figures_folder=figures_folder)
+    make_unit_stats(df, charge_types=charge_types)
