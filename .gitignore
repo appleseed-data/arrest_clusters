@@ -123,3 +123,4 @@ dmypy.json
 Arrests.bz2
 src/data/Arrests.bz2
 /data/arrest_clusters.csv
+map_data/arrests_redacted_classified_geo.geojson
