@@ -124,3 +124,11 @@ Arrests.bz2
 src/data/Arrests.bz2
 /data/arrest_clusters.csv
 map_data/arrests_redacted_classified_geo.geojson
+data/arrest_clusters_2014.csv
+data/arrest_clusters_2015.csv
+data/arrest_clusters_2016.csv
+data/arrest_clusters_2017.csv
+data/arrest_clusters_2018.csv
+data/arrest_clusters_2019.csv
+data/arrest_clusters_2020.csv
+temp.py
