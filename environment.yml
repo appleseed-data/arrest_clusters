@@ -1,22 +1,19 @@
 name: arrest_clusters
 channels:
-  - anaconda
   - defaults
 dependencies:
-  - ca-certificates=2020.10.14=0
-  - certifi=2020.6.20=py38_0
+  - ca-certificates=2021.5.25=hecd8cb5_1
   - libcxx=10.0.0=1
-  - libedit=3.1.20191231=h1de35cc_1
   - libffi=3.3=hb1e8313_2
   - ncurses=6.2=h0a44026_1
-  - openssl=1.1.1h=haf1e3a3_0
-  - pip=20.2.4=py38_0
-  - python=3.8.5=h26836e1_1
-  - readline=8.0=h1de35cc_0
-  - setuptools=50.3.0=py38h0dc7051_1
-  - sqlite=3.33.0=hffcf06c_0
+  - openssl=1.1.1k=h9ed2024_0
+  - pip=21.1.1=py38hecd8cb5_0
+  - python=3.8.10=h88f2d9e_7
+  - readline=8.1=h9ed2024_0
+  - setuptools=52.0.0=py38hecd8cb5_0
+  - sqlite=3.35.4=hce871da_0
   - tk=8.6.10=hb0a8c7a_0
-  - wheel=0.35.1=py_0
+  - wheel=0.36.2=pyhd3eb1b0_0
   - xz=5.2.5=h1de35cc_0
   - zlib=1.2.11=h1de35cc_3
   - pip:
@@ -29,6 +26,7 @@ dependencies:
     - blis==0.7.4
     - cachetools==4.2.1
     - catalogue==2.0.1
+    - certifi==2020.6.20
     - chardet==4.0.0
     - click==7.1.2
     - colorama==0.4.4
@@ -68,6 +66,7 @@ dependencies:
     - packaging==20.9
     - pandas==1.2.3
     - pathy==0.4.0
+    - pd-helper==0.1.5
     - pillow==8.1.2
     - plotly==4.14.3
     - preshed==3.0.5
@@ -93,6 +92,7 @@ dependencies:
     - scikit-learn==0.24.1
     - scipy==1.6.1
     - seaborn==0.11.1
+    - shortuuid==1.0.1
     - six==1.15.0
     - sklearn==0.0
     - smart-open==3.0.0
@@ -114,4 +114,4 @@ dependencies:
     - wordcloud==1.8.1
     - yarl==1.6.3
     - zincbase==0.10.1
-prefix: /Users/cheese/opt/anaconda3/envs/arrest_clusters
+prefix: /opt/anaconda3/envs/arrest_clusters

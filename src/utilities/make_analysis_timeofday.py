@@ -127,7 +127,7 @@ def make_unit_stats(df
         file_name = f'tod_arrests_hist_{i}.png'
         file_path = os.sep.join([FIGURES_FOLDER, file_name])
         plt.savefig(file_path)
-        plt.show()
+        # plt.show()
 
         key = 'unit'
         fill_val = '000' if key == 'unit' else '0000' if key == 'beat' else 'None'
@@ -166,7 +166,7 @@ def make_unit_stats(df
         file_name = f'tod_arrests_hist_{i}_policerelated.png'
         file_path = os.sep.join([FIGURES_FOLDER, file_name])
         plt.savefig(file_path)
-        plt.show()
+        # plt.show()
 
 
 def make_radar_fig(df
@@ -344,4 +344,4 @@ def make_radar_fig(df
         file_path = os.sep.join([FIGURES_FOLDER, figure_name])
         plt.savefig(file_path)
 
-        plt.show()
+        # plt.show()

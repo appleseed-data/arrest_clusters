@@ -18,7 +18,7 @@ git clone https://github.com/appleseed-data/arrest_clusters
 2. Create a new conda environment from the environment.yml file. This is optional but highly recommended, but you can use your own env instead.
 
 ```terminal
-conda env create -f environment.yml
+conda env create --file environment.yml -n arrest_clusters
 ```
 
 * Note, in some cases the conda env setup fails but does create an environment called arrest_clusters. If that's the case, activate the arrest_clusters environment and install dependencies with pip, see next. 
@@ -87,7 +87,7 @@ Overview. The CPD arrest data contains four columns of arrest charges, numbered 
 * What: Convert raw text of arrest charge description to one of many discrete, semantic categories of arrest. 
 * Why: There are thousands of charge descriptions that vary slightly but are fundamentally the same type of arrest charge, reducing the number of unique charges into discrete categories makes analysis simpler to perform. 
 * How: Leverage a labeled dataset of charge descriptions to categories from this worksheet [CPD Crosswalk](https://github.com/appleseed-data/arrest_clusters/blob/main/data/CPD_crosswalk_final.xlsx) and apply classification methods.
-
+* Other: The charges are also mapped to numeric representation of severity where a high number represents relative higher severity to other charges
 #### Classification Methods to Map Charge Descriptions to Categories
 
 Using a labeled dataset, map charge descriptions to various categories. Most records (approx 90%) are mapped through a direct or fuzzy match, the rest are mapped with an NLP classifier, n=523,184. 
